@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Neo4j.Driver;
 using SocialNetworkApp.Server.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,11 +16,15 @@ builder.Services.Configure<RedisSettings>(
 builder.Services.AddSingleton<IRedisSettings>(
     sp=>sp.GetRequiredService<IOptions<RedisSettings>>().Value);
 
-
 builder.Services.Configure<NeoSettings>(builder.Configuration.GetSection("NeoSettings"));
 builder.Services.AddSingleton<INeoSettings>(
        sp=>sp.GetRequiredService<IOptions<NeoSettings>>().Value);
 
+builder.Services.AddSingleton<IDriver>(sp =>
+{
+    var neoSettings = sp.GetRequiredService<INeoSettings>();
+    return GraphDatabase.Driver(neoSettings.Uri, AuthTokens.Basic(neoSettings.User, neoSettings.Password));
+});
 
 var app = builder.Build();
 
