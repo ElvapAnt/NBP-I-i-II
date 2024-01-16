@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
+using SocialNetworkApp.Server.Repos;
 using SocialNetworkApp.Server.Settings;
+using SocialNetworkApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +25,16 @@ builder.Services.AddSingleton<INeoSettings>(
 builder.Services.AddSingleton<IDriver>(sp =>
 {
     var neoSettings = sp.GetRequiredService<INeoSettings>();
-    return GraphDatabase.Driver(neoSettings.Uri, AuthTokens.Basic(neoSettings.User, neoSettings.Password));
+    
+    var driver= GraphDatabase.Driver(neoSettings.Uri, AuthTokens.Basic(neoSettings.User, neoSettings.Password));
+
+    AppDomain.CurrentDomain.ProcessExit += (sender, args) => driver.Dispose();
+
+    return driver;
 });
+
+builder.Services.AddScoped<UserRepo, UserRepo>();
+builder.Services.AddScoped<UserService, UserService>();
 
 var app = builder.Build();
 

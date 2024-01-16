@@ -4,7 +4,7 @@ namespace SocialNetworkApp.Server.Entities
 {
     public class User
     {
-        public string Id { get; set; } = $"userId:{Guid.NewGuid().ToString()}";
+        public string UserId { get; set; } = string.Empty;
         public string Name { get; set; } = String.Empty;
 
         public string Email { get; set; } = String.Empty;
