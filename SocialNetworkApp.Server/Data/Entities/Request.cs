@@ -1,4 +1,4 @@
-namespace SocialNetworkApp.Data.Entities;
+namespace SocialNetworkApp.Server.Data.Entities;
 
 public class Request
 {

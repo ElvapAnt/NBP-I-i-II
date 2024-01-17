@@ -8,7 +8,12 @@ namespace SocialNetworkApp.Data;
 public static class RecordMapper
 {
 
-    //Not returning password here
+    /// <summary>
+    /// Thumbnail fali
+    /// </summary>
+    /// <param name="record"></param>
+    /// <param name="nodeKey"></param>
+    /// <returns></returns>
     public static User ToUser(IRecord record,string nodeKey="user")
     {
         INode node = record[nodeKey].As<INode>();
@@ -19,7 +24,7 @@ public static class RecordMapper
             Name = node["Name"].As<string>(),
             Bio = node["Bio"].As<string>(),
             Email = node["Email"].As<string>(),
-            Password=node["Password"].As<string>()
+            Password=node["Password"].As<string>(),
         };
     }
 
@@ -27,5 +32,24 @@ public static class RecordMapper
     {
         return records.Select(record=>ToUser(record,nodeKey)
         ).ToList();
+    }
+
+    public static Post ToPost(IRecord record,string nodeKey="post")
+    {
+        INode node = record[nodeKey].As<INode>();
+        return new Post
+        {
+            PostId = node["PostId"].As<string>(),
+            PostedBy = node["PostedBy"].As<string>(),
+            Timestamp = node["Timestamp"].As<long>(),
+            Likes = node["Likes"].As<int>(),
+            Content = node["Content"].As<string>(),
+            MediaURL=node["MediaURL"].As<string>()
+        };
+    }
+
+    public static List<Post> ToPostList(List<IRecord> records,string nodeKey)
+    {
+        return records.Select(record => ToPost(record, nodeKey)).ToList();
     }
 }

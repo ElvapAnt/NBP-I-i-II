@@ -1,7 +1,7 @@
 using SocialNetworkApp.Server.Data.Entities;
 using SocialNetworkApp.Server.Business.Repos;
 
-namespace SocialNetworkApp.Business.Services;
+namespace SocialNetworkApp.Server.Business.Services;
 
 public class UserService(UserRepo repo)
 {
@@ -9,6 +9,9 @@ public class UserService(UserRepo repo)
 
     public async Task AddUser(User user)
     {
+        var userExists = GetUserByUsername(user.Username) == null;
+        if (userExists)
+            throw new Exception("User with given username already exists.");
         await _repo.AddUser(user);
     }
 

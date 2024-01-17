@@ -2,7 +2,7 @@ using Microsoft.Extensions.Options;
 using Neo4j.Driver;
 using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Settings;
-using SocialNetworkApp.Business.Services;
+using SocialNetworkApp.Server.Business.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +35,9 @@ builder.Services.AddSingleton<IDriver>(sp =>
 
 builder.Services.AddScoped<UserRepo, UserRepo>();
 builder.Services.AddScoped<UserService, UserService>();
+
+builder.Services.AddScoped<PostRepo, PostRepo>();
+builder.Services.AddScoped<PostService, PostService>();
 
 var app = builder.Build();
 

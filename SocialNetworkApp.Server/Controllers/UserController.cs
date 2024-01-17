@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SocialNetworkApp.Server.Data.Entities;
-using SocialNetworkApp.Business.Services;
+using SocialNetworkApp.Server.Business.Services;
 
 namespace SocialNetworkApp.Server.Controllers;
 
