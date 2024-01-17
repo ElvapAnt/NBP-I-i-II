@@ -1,4 +1,4 @@
-namespace SocialNetworkApp.Server.Entities;
+namespace SocialNetworkApp.Server.Data.Entities;
 
 public class Comment
 {

@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
 using Neo4j.Driver;
-using SocialNetworkApp.Server.Repos;
+using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Settings;
-using SocialNetworkApp.Services;
+using SocialNetworkApp.Business.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
