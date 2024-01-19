@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using NRedisStack.Graph;
 using SocialNetworkApp.Server.Data.Entities;
 
-namespace SocialNetworkApp.Data;
+namespace SocialNetworkApp.Server.Data;
 
 public static class RecordMapper
 {

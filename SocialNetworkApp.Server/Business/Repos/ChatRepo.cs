@@ -1,6 +1,6 @@
 using Microsoft.OpenApi.Models;
 using Neo4j.Driver;
-using SocialNetworkApp.Data;
+using SocialNetworkApp.Server.Data;
 using SocialNetworkApp.Server.Data.Entities;
 using SocialNetworkApp.Server.Error;
 

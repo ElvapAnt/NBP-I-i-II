@@ -43,6 +43,8 @@ builder.Services.AddScoped<PostService, PostService>();
 builder.Services.AddScoped<ChatRepo, ChatRepo>();
 builder.Services.AddScoped<ChatService, ChatService>();
 
+builder.Services.AddScoped<NotificationRepo, NotificationRepo>();
+builder.Services.AddScoped<NotificationService, NotificationService>();
 
 var app = builder.Build();
 

@@ -1,5 +1,5 @@
 using Neo4j.Driver;
-using SocialNetworkApp.Data;
+using SocialNetworkApp.Server.Data;
 using SocialNetworkApp.Server.Data.Entities;
 
 namespace SocialNetworkApp.Server.Business.Repos;
