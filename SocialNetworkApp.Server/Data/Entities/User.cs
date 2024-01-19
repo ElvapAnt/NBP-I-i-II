@@ -13,6 +13,6 @@ namespace SocialNetworkApp.Server.Data.Entities
         public string Username { get; set; } = String.Empty;
         public string Bio { get; set; } = String.Empty;
 
-        public string Thumbnail { get; set; } = String.Empty;
+        public string Thumbnail { get; set; } = "NO_THUMBNAIL";
     }
 }

@@ -38,11 +38,18 @@ public class UserController(UserService service) : ControllerBase
         return Ok($"User : {userId} has been deleted.");
     }
 
-    [HttpPut("UpdateUser")]
-    public async Task<IActionResult> UpdateUser([FromBody]User user)
+    [HttpPut("UpdateUsernameAndPassword/{userId}/{newUsername}")]
+    public async Task<IActionResult> UpdateUsername([FromRoute]string userId,[FromRoute]string newUsername)
     {
-        await _service.UpdateUser(user);
+        await _service.UpdateUsername(userId, newUsername);
         return Ok("User updated.");
+    }
+
+    [HttpPut("UpdateProfilePicture/{userId}/{profilePic}")]
+    public async Task<IActionResult> UpdateProfilePic([FromRoute]string userId,[FromRoute]string profilePic)
+    {
+        await _service.UpdateThumbnail(userId, profilePic);
+        return Ok("User updated");
     }
 
     [HttpGet("GetFriends/{userId}")]
@@ -55,6 +62,12 @@ public class UserController(UserService service) : ControllerBase
     public async Task<IActionResult> GetRecommendedFriends([FromRoute]string userId,[FromQuery]int count=0x7FFFFFFF,[FromQuery]int skip=0)
     {
         return Ok(await _service.GetRecommendedFriends(userId, count, skip));
+    }
+
+    [HttpGet("SearchForUsers/{usernamePattern}")]
+    public async Task<IActionResult> SearchForUsers([FromRoute] string usernamePattern)
+    {
+        return Ok(await _service.SearchForUsers(usernamePattern));
     }
 
     

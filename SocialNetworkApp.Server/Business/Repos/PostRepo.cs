@@ -13,12 +13,11 @@ public class PostRepo(IDriver driver)
         post.PostId = "post:"+Guid.NewGuid().ToString();
         post.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         using var session = _driver.AsyncSession();
-        string query = "CREATE (p:Post $post) RETURN p";
-        string query2 = "MATCH (u:User{UserId:$userId}), (p:Post{PostId:$postId}) MERGE (u)-[:POSTED]->(p) RETURN u";
-        var parameters = new { post };
-        var parameters2 = new { userId, postId = post.PostId };
+        string query = "CREATE (p:Post $post) WITH p "+
+        "MATCH (u:User{UserId:$userId}) MERGE (u)-[:POSTED]->(p) SET p.PostedBy=u.Username SET p.PostedByPic=u.Thumbnail "+
+        "RETURN u";
+        var parameters = new { post ,userId};
         await session.RunAsync(query, parameters);
-        await session.RunAsync(query2, parameters2);
     }
 
     public async Task<List<Post>> GetPosts(string userId,int count, int skip)
@@ -105,5 +104,13 @@ public class PostRepo(IDriver driver)
         var result =await session.RunAsync(query, parameters);
         var list = await result.ToListAsync();
         return RecordMapper.ToPostList(list, "c");
+    }
+
+    public async Task UpdatePost(Post post)
+    {
+        using var session = _driver.AsyncSession();
+        string query = "MATCH (p:Post{PostId:$postId}) SET p=$post";
+        var parameters = new { postId = post.PostId, post };
+        await session.RunAsync(query, parameters);
     }
 }

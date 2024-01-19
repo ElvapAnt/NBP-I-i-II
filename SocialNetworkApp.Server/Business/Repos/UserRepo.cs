@@ -25,21 +25,32 @@ public class UserRepo(IDriver driver)
         var parameters = new { userId };
         var result =await session.RunAsync(query, parameters);
 
-        var record= await result.SingleAsync();
+        bool success = await result.FetchAsync();
+        if(success)
+        {
+            var record = result.Current;
 
-        return RecordMapper.ToUser(record!,"u");
+            return RecordMapper.ToUser(record,"u");
+        }
+        return null;
     }
 
-    public async Task<User> GetUserByUsername(string username)
+    public async Task<User?> GetUserByUsername(string username)
     {
         using var session = _driver.AsyncSession();
         string query = "MATCH (u:User WHERE u.Username = $username) RETURN u";
         var parameters = new { username };
         var result =await session.RunAsync(query, parameters);
 
-        var record = await result.SingleAsync();
+        bool success = await result.FetchAsync();
+        if(success)
+        {
+            var record = result.Current;
 
-        return RecordMapper.ToUser(record,"u");
+            return RecordMapper.ToUser(record,"u");
+        }
+        return null;
+
     }
 
     public async Task DeleteUser(string userId)
@@ -55,6 +66,33 @@ public class UserRepo(IDriver driver)
         using var session = _driver.AsyncSession();
         string query ="MATCH (u:User{UserId:$userId}) SET u=$user RETURN u";
         var parameters = new { userId = user.UserId, user };
+        await session.RunAsync(query, parameters);
+    }
+
+    public async Task UpdateUsersPosts(string userId)
+    {
+        using var session = _driver.AsyncSession();
+        string query = "MATCH (u:User{UserId:$userId})-[:POSTED]->(p:Post) SET p.PostedByPic=u.Thumbnail SET p.PostedBy=u.Username";
+        var parameters = new { userId };
+        await session.RunAsync(query, parameters);
+    }
+
+    public async Task UpdateUsersChats(string userId)
+    {
+        using var session = _driver.AsyncSession();
+        string query = "MATCH (u:User{UserId:$userId})-[:MEMBER_OF]->(c:Chat) WITH c,u " +
+        "SET c.Members = [member in c.Members | CASE WHEN member CONTAINS $userId THEN $userId+' '+u.Username+' '+u.Thumbnail " +
+        "ELSE member END]";
+        var parameters = new { userId };
+        await session.RunAsync(query, parameters);
+    }
+
+    public async Task UpdateUsersNotifications(string userId)
+    {
+        using var session = _driver.AsyncSession();
+        string query = "MATCH (u:User{UserId:$userId})-[:SENT]->(n:Notification) WITH u,n " +
+        "SET n.From = u.Username";
+        var parameters = new { userId };
         await session.RunAsync(query, parameters);
     }
 
@@ -81,13 +119,7 @@ public class UserRepo(IDriver driver)
     }
 
 
-    /// <summary>
-    /// Ne vraca sortirano po ostalim navedenim kljucevima iz nekog razloga.
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="count"></param>
-    /// <param name="skip"></param>
-    /// <returns></returns>
+
     public async Task<List<User>> GetRecommendedFriends(string userId,int count,int skip)
     {
         using var session = _driver.AsyncSession();
@@ -100,5 +132,22 @@ public class UserRepo(IDriver driver)
 
         return RecordMapper.ToUserList(await result.ToListAsync(), "recommended");
 
+    }
+
+    public async Task<List<User>> SearchForUsers(string usernamePattern)
+    {
+        using var session = _driver.AsyncSession();
+        string lowercasePattern = usernamePattern.ToLower();
+        var query = 
+        "MATCH (u:User) WHERE toLower(u.Username) CONTAINS $lowercasePattern WITH u, "+
+        "toLower(u.Username) as lowercaseUsername RETURN u "+
+        "ORDER BY CASE "+
+        "WHEN lowercaseUsername STARTS WITH $lowercasePattern THEN 1 "+
+        "WHEN lowercaseUsername CONTAINS $lowercasePattern AND NOT lowercaseUsername ENDS WITH $lowercasePattern THEN 2 "+
+        "ELSE 3 END, lowercaseUsername";
+        var parameters = new { lowercasePattern};
+        var result = await session.RunAsync(query, parameters);
+        var list =await result.ToListAsync();
+        return RecordMapper.ToUserList(list, "u");
     }
 }
