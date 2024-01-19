@@ -67,7 +67,7 @@ public static class RecordMapper
             }, str =>
             {
                 string[] chatUserParams = str.Split(' ');
-                ChatUser chatUser = new ChatUser
+                ChatUser chatUser = new()
                 {
                     Username=chatUserParams[1],
                     Thumbnail=chatUserParams[2]

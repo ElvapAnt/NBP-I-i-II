@@ -1,18 +1,20 @@
 using SocialNetworkApp.Server.Data.Entities;
 using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Error;
+using Microsoft.AspNetCore.Identity;
 
 namespace SocialNetworkApp.Server.Business.Services;
 
 public class UserService(UserRepo repo)
 {
     private readonly UserRepo _repo = repo;
-
+    private readonly PasswordHasher<User> _hasher = new();
     public async Task AddUser(User user)
     {
         var userExists =await _repo.GetUserByUsername(user.Username) != null;
         if (userExists)
             throw new CustomException("User with given username already exists.");
+        user.Password = _hasher.HashPassword(user, user.Password);
         await _repo.AddUser(user);
     }
 
@@ -57,10 +59,10 @@ public class UserService(UserRepo repo)
         return await _repo.GetFriends(userId, count, skip);
     }
 
-    public async Task<bool> LogIn(string username,string password)
+    public async Task<User?> LogIn(string username,string password)
     {
-        var user = await GetUserByUsername(username);
-        return user.Password == password;
+        User? user = await GetUserByUsername(username);
+        return _hasher.VerifyHashedPassword(user,user.Password,password)!=0?user:null;
     }
 
     public async Task<List<User>> GetRecommendedFriends(string userId,int count, int skip)

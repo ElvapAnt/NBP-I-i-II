@@ -1,0 +1,36 @@
+.searchbar_container{
+    width:100%;
+    max-width: 36rem;
+    display: flex;
+    margin-left:20px;
+    margin-right: auto;
+
+    font-size: 1.25rem; 
+    line-height: 1.75rem;
+    height: 50px;
+}
+
+.searchbar_container>input[type='text']
+{
+    width:100%;
+    color: rgb(17 24 39);
+    padding-left: 1rem;
+    padding-right: 1rem; 
+    border:0px;
+}
+.searchbar_container>input:focus
+{
+    outline: none;
+}
+.searchbar_container>input[type='text']::placeholder
+{
+    color: #e2e8f0;
+}
+
+.searchbar_container>button
+{
+    background-color: white;
+    padding: 1rem; 
+    border:0px;
+}
+

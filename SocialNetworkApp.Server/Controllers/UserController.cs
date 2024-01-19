@@ -9,12 +9,19 @@ namespace SocialNetworkApp.Server.Controllers;
 public class UserController(UserService service) : ControllerBase
 {
     private readonly UserService _service = service;
+
+    [HttpGet("LogIn/{username}/{password}")]
+    public async Task<IActionResult> LogIn([FromRoute]string username,[FromRoute]string password)
+    {
+        var res = await _service.LogIn(username, password);
+        return res != null ? Ok(res) : BadRequest("Error logging in");
+    }
     [HttpPost("AddUser")]
     public async Task<IActionResult> AddUser([FromBody] User user)
     {
         await _service.AddUser(user);
 
-        return Ok("User added.");
+        return Ok(user.UserId);
     }
 
      [HttpPost("GetUser/{userId}")]

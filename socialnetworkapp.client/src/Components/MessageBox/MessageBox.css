@@ -1,0 +1,45 @@
+.messagebox
+{
+    width: 95%;
+    height: 40px;
+    display: flex;
+    flex-direction: row;
+    border: 1px solid black;
+    padding-bottom:5px;
+    padding-top:5px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    margin-top:10px;
+}
+
+.messagebox-input
+{
+    flex-grow: 1;
+    outline: none;
+    border: 0px;
+    height: 100%;
+    font-size: x-large;
+    width: 95%;
+}
+
+.messagebox-button
+{
+    outline: none;
+    border: 0px;
+    background-color: white;
+    width:60px;
+
+}
+
+input[type="file"]
+{
+    display: none;
+}
+
+.file-input {
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+    margin-top: 2px;
+}
+

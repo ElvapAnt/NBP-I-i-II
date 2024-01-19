@@ -1,0 +1,19 @@
+.chatbubble-container
+{
+    width:98%;
+    height: auto;
+    display:flex;
+    margin-bottom:30px;
+}
+
+.chatbubble{
+    max-width: 35%;
+    min-width: 20px;
+    height: 100%;
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    align-items:center;
+    justify-content: center;
+    overflow:hidden;
+}

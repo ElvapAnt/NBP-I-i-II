@@ -46,6 +46,16 @@ builder.Services.AddScoped<ChatService, ChatService>();
 builder.Services.AddScoped<NotificationRepo, NotificationRepo>();
 builder.Services.AddScoped<NotificationService, NotificationService>();
 
+builder.Services.AddCors(action =>
+{
+    action.AddPolicy("CORS", policy =>
+    {
+        policy.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
+    });
+});
+
+
+
 var app = builder.Build();
 
 app.UseMiddleware<ErrorHandler>();
@@ -60,6 +70,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("CORS");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
