@@ -3,6 +3,7 @@ using Neo4j.Driver;
 using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Settings;
 using SocialNetworkApp.Server.Business.Services;
+using SocialNetworkApp.Server.Error;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +40,13 @@ builder.Services.AddScoped<UserService, UserService>();
 builder.Services.AddScoped<PostRepo, PostRepo>();
 builder.Services.AddScoped<PostService, PostService>();
 
+builder.Services.AddScoped<ChatRepo, ChatRepo>();
+builder.Services.AddScoped<ChatService, ChatService>();
+
+
 var app = builder.Build();
+
+app.UseMiddleware<ErrorHandler>();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
