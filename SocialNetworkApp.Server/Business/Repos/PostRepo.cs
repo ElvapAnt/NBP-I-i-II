@@ -20,12 +20,12 @@ public class PostRepo(IDriver driver)
         await session.RunAsync(query, parameters);
     }
 
-    public async Task<List<Post>> GetPosts(string userId,int count, int skip)
+    public async Task<List<PostDTO>> GetPosts(string userId,int count, int skip,string currentUserId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (u:User{UserId:$userId})-[:POSTED]->(p:Post) "+
-        "WHERE NOT p:Comment RETURN p ORDER BY p.Timestamp DESC SKIP $skip LIMIT $count";
-        var parameters = new { userId,skip,count };
+        string query = "MATCH (user:User{UserId:$currentUserId}), (u:User{UserId:$userId})-[:POSTED]->(p:Post) "+
+        "WHERE NOT p:Comment  with user,u,p RETURN p {.*, Liked: EXISTS ((user)-[:LIKES]->(p))} ORDER BY p.Timestamp DESC SKIP $skip LIMIT $count";
+        var parameters = new { currentUserId,userId,skip,count };
         var result = await session.RunAsync(query, parameters);
         var list =await result.ToListAsync();
         return RecordMapper.ToPostList(list, "p");
@@ -39,11 +39,12 @@ public class PostRepo(IDriver driver)
         var result = await session.RunAsync(query, parameters);
     }
 
-    public async Task<List<Post>> GetFeed(string userId,int count)
+    public async Task<List<PostDTO>> GetFeed(string userId,int count)
     {
         using var session = _driver.AsyncSession();
         string query = "MATCH (u:User{UserId:$userId})-[:FRIENDS]->(friend:User)-[:POSTED]->(p:Post) WHERE " +
-        "NOT p:Comment AND NOT (u)-[:SEEN]->(p) WITH p,u ORDER BY p.Timestamp DESC LIMIT $count CREATE (u)-[:SEEN]->(p) RETURN p";
+        "NOT p:Comment AND NOT (u)-[:SEEN]->(p) WITH p,u ORDER BY p.Timestamp DESC LIMIT $count CREATE (u)-[:SEEN]->(p) "+
+        "RETURN p {.*, Liked: EXISTS ((u)-[:LIKES]->(p))}";
         var parameters = new { userId, count };
         var result = await session.RunAsync(query, parameters);
         List<IRecord> list = await result.ToListAsync();
@@ -69,11 +70,13 @@ public class PostRepo(IDriver driver)
 
     }
 
-    public async Task<List<User>> GetLikes(string postId)
+    public async Task<List<UserDTO>> GetLikes(string postId,string userId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (u:User)-[l:LIKES]->(p:Post{PostId:$postId}) RETURN u";
-        var parameters = new { postId };
+        string query = "MATCH (u:User)-[l:LIKES]->(p:Post{PostId:$postId}), (u2:User{UserId:$userId}) "+
+        "RETURN u {.*,IsFriend: EXISTS ((u)-[:FRIENDS]->(u2)), RecievedRequest: EXISTS ((u)-[:SENT]->(:Request)<-[:RECIEVED]-(u2)), "+
+        "SentRequest: EXISTS ((u2)-[:SENT]->(:Request)<-[:RECIEVED]-(u))}";
+        var parameters = new { postId,userId };
         var result = await session.RunAsync(query, parameters);
         var list = await result.ToListAsync();
         var parameters2 = new { postId,count=list.Count };
@@ -95,12 +98,13 @@ public class PostRepo(IDriver driver)
         await session.RunAsync(query, parameters);
     }
 
-    public async Task<List<Post>> GetComments(string postId)
+    public async Task<List<PostDTO>> GetComments(string postId,string userId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (p:Post{PostId:$postId})-[:HAS_COMMENT]->(c:Comment) return c ORDER BY c.Likes DESC, "+
+        string query = "MATCH (u:User{UserId:$userId}), (p:Post{PostId:$postId})-[:HAS_COMMENT]->(c:Comment) "+
+        "RETURN c {.*, Liked: EXISTS ((u)-[:LIKES]->(c))} ORDER BY c.Likes DESC, "+
         "c.Timestamp DESC, c.PostId DESC";
-        var parameters = new { postId };
+        var parameters = new {userId, postId };
         var result =await session.RunAsync(query, parameters);
         var list = await result.ToListAsync();
         return RecordMapper.ToPostList(list, "c");

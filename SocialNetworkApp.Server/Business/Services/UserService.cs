@@ -54,7 +54,7 @@ public class UserService(UserRepo repo)
         await _repo.UpdateUsersChats(userId);
     }
 
-    public async Task<List<User>> GetFriends(string userId,int count,int skip)
+    public async Task<List<UserDTO>> GetFriends(string userId,int count,int skip)
     {
         return await _repo.GetFriends(userId, count, skip);
     }
@@ -65,13 +65,19 @@ public class UserService(UserRepo repo)
         return _hasher.VerifyHashedPassword(user,user.Password,password)!=0?user:null;
     }
 
-    public async Task<List<User>> GetRecommendedFriends(string userId,int count, int skip)
+    public async Task<List<UserDTO>> GetRecommendedFriends(string userId,int count, int skip)
     {
         return await _repo.GetRecommendedFriends(userId, count, skip);
     }
 
-    public async Task<List<User>> SearchForUsers(string usernamePattern)
+    public async Task<List<UserDTO>> SearchForUsers(string usernamePattern,string userId)
     {
-        return await _repo.SearchForUsers(usernamePattern);
+        return await _repo.SearchForUsers(usernamePattern, userId);
     }
+
+    public async Task AddFriend(string userId1,string userId2)
+    {
+        await _repo.AddFriend(userId1, userId2);
+    }
+
 }

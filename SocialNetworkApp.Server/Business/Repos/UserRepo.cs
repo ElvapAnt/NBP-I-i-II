@@ -12,7 +12,7 @@ public class UserRepo(IDriver driver)
     {
         user.UserId = "user:"+Guid.NewGuid().ToString();
         using var session = _driver.AsyncSession();
-        string query = "CREATE (u: User $user) RETURN u";
+        string query = "CREATE (u: User $user) CREATE (u)-[:FRIENDS]->(u) RETURN u";
         var parameters = new { user };
 
         await session.RunAsync(query, parameters);
@@ -105,28 +105,29 @@ public class UserRepo(IDriver driver)
         await session.RunAsync(query, parameters);
     }
 
-    public async Task<List<User>> GetFriends(string userId,int count=0x7FFFFFFF,int skip=0)
+    public async Task<List<UserDTO>> GetFriends(string userId,int count=0x7FFFFFFF,int skip=0)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (u:User{UserId:$userId})-[:FRIENDS]->(friend:User) WITH friend as f Order By "+ 
-        "f.Name,f.UserId RETURN f " +
+        string query = "MATCH (u:User{UserId:$userId})-[:FRIENDS]->(friend:User) WHERE u.UserId<>friend.UserId "+
+        "WITH friend as f Order By "+ 
+        "f.Name,f.UserId RETURN f {.*,IsFriend: true, SentRequest: false, RecievedRequest: false} " +
         "SKIP $skip LIMIT $count";
         var parameters = new { userId, skip, count };
         var result = await session.RunAsync(query, parameters);
-        List<User> friends = RecordMapper.ToUserList(await result.ToListAsync(), "f");
-
-        return friends;
+        return RecordMapper.ToUserList(await result.ToListAsync(), "f");
     }
 
 
 
-    public async Task<List<User>> GetRecommendedFriends(string userId,int count,int skip)
+    public async Task<List<UserDTO>> GetRecommendedFriends(string userId,int count,int skip)
     {
         using var session = _driver.AsyncSession();
         string query = "MATCH (u:User{UserId:$userId})-[:FRIENDS]->(friend:User)-[:FRIENDS]->(recommended:User) " +
-        "WHERE NOT (u)-[:FRIENDS]->(recommended) AND recommended<>u WITH recommended, "+
+        "WHERE NOT (u)-[:FRIENDS]->(recommended) AND recommended<>u WITH recommended,u, "+
         "COUNT(DISTINCT friend) as mutualFriendCount "+
-        "ORDER BY mutualFriendCount DESC, recommended.Name ASC, recommended.UserId ASC RETURN recommended SKIP $skip LIMIT $count";
+        "ORDER BY mutualFriendCount DESC, recommended.Name ASC, recommended.UserId ASC "+
+        "RETURN recommended {.*, IsFriend: false, SentRequest: EXISTS ((u)-[:SENT]->(:Request)<-[:RECIEVED]-(recommended)), "+
+        "RecievedRequest: EXISTS ((recommended)-[:SENT]->(:Request)<-[:RECIEVED]-(u))} SKIP $skip LIMIT $count";
         var parameters = new { userId, skip, count };
         var result = await session.RunAsync(query, parameters);
 
@@ -134,18 +135,20 @@ public class UserRepo(IDriver driver)
 
     }
 
-    public async Task<List<User>> SearchForUsers(string usernamePattern)
+    public async Task<List<UserDTO>> SearchForUsers(string usernamePattern,string userId)
     {
         using var session = _driver.AsyncSession();
         string lowercasePattern = usernamePattern.ToLower();
         var query = 
-        "MATCH (u:User) WHERE toLower(u.Username) CONTAINS $lowercasePattern WITH u, "+
-        "toLower(u.Username) as lowercaseUsername RETURN u "+
+        "MATCH (u2:User{UserId:$userId}), (u:User) WHERE toLower(u.Username) CONTAINS $lowercasePattern AND u.UserId<>u2.UserId "+
+        "WITH u,u2,toLower(u.Username) as lowercaseUsername RETURN u "+
+        "{.*,IsFriend: EXISTS ((u)-[:FRIENDS]->(u2)), SentRequest: EXISTS ((u2)-[:SENT]->(:Request)<-[:RECIEVED]-(u)), "+
+        "RecievedRequest: EXISTS ((u)-[:SENT]->(:Request)<-[:RECIEVED]-(u2))} "+
         "ORDER BY CASE "+
         "WHEN lowercaseUsername STARTS WITH $lowercasePattern THEN 1 "+
         "WHEN lowercaseUsername CONTAINS $lowercasePattern AND NOT lowercaseUsername ENDS WITH $lowercasePattern THEN 2 "+
         "ELSE 3 END, lowercaseUsername";
-        var parameters = new { lowercasePattern};
+        var parameters = new { lowercasePattern,userId};
         var result = await session.RunAsync(query, parameters);
         var list =await result.ToListAsync();
         return RecordMapper.ToUserList(list, "u");

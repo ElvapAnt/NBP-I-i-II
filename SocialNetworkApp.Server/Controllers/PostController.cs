@@ -11,11 +11,10 @@ public class PostController(PostService service):ControllerBase
 {
     private readonly PostService _service = service;
 
-    [HttpGet("GetPosts/{userId}")]
-    public async Task<IActionResult> GetPosts([FromRoute]string userId,[FromQuery]int count=0x7FFFFFFF,[FromQuery]int skip=0)
+    [HttpGet("GetPosts/{userId}/{currentId}")]
+    public async Task<IActionResult> GetPosts([FromRoute]string userId,[FromRoute]string currentId,[FromQuery]int count=0x7FFFFFFF,[FromQuery]int skip=0)
     {
-        List<Post> posts =await _service.GetPosts(userId,count,skip);
-
+        List<PostDTO> posts =await _service.GetPosts(userId,count,skip,currentId);
         return Ok(posts);
     }
 
@@ -43,14 +42,14 @@ public class PostController(PostService service):ControllerBase
     [HttpGet("GetFeed/{userId}")]
     public async Task<IActionResult> GetFeed([FromRoute] string userId, [FromQuery] int count = 20)
     {
-        List<Post> list = await _service.GetFeed(userId,count);
+        List<PostDTO> list = await _service.GetFeed(userId,count);
         return Ok(list);
     }
 
-    [HttpGet("GetLikes/{postId}")]
-    public async Task<IActionResult> GetLikes([FromRoute]string postId)
+    [HttpGet("GetLikes/{postId}/{userId}")]
+    public async Task<IActionResult> GetLikes([FromRoute]string postId,[FromRoute]string userId)
     {
-        List<User> likedBy = await _service.GetLikes(postId);
+        List<UserDTO> likedBy = await _service.GetLikes(postId,userId);
         return Ok(likedBy);
     }
 
@@ -60,9 +59,9 @@ public class PostController(PostService service):ControllerBase
         await _service.AddComment(post, userId,postId);
         return Ok("Posted succesfully.");
     }
-    [HttpGet("GetComments/{postId}")]
-    public async Task<IActionResult> GetComments([FromRoute]string postId)
+    [HttpGet("GetComments/{postId}/{userId}")]
+    public async Task<IActionResult> GetComments([FromRoute]string postId,[FromRoute]string userId)
     {
-        return Ok(await _service.GetComments(postId));
+        return Ok(await _service.GetComments(postId,userId));
     }
 }

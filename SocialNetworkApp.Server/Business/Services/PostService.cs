@@ -12,9 +12,9 @@ public class PostService(PostRepo repo)
         await _repo.AddPost(post,userId);
     }
 
-    public async Task<List<Post>> GetPosts(string userId,int count,int skip)
+    public async Task<List<PostDTO>> GetPosts(string userId,int count,int skip,string currentUserId)
     {
-        return await _repo.GetPosts(userId,count,skip);
+        return await _repo.GetPosts(userId,count,skip,currentUserId);
     }
 
     public async Task DeletePost(string postId)
@@ -22,7 +22,7 @@ public class PostService(PostRepo repo)
         await _repo.DeletePost(postId);
     }
 
-    public async Task<List<Post>> GetFeed(string userId,int count)
+    public async Task<List<PostDTO>> GetFeed(string userId,int count)
     {
         return await _repo.GetFeed(userId, count);
     }
@@ -32,9 +32,9 @@ public class PostService(PostRepo repo)
         await _repo.LikePost(userId, postId);
     }
 
-    public async Task<List<User>> GetLikes(string postId)
+    public async Task<List<UserDTO>> GetLikes(string postId,string userId)
     {
-        return await _repo.GetLikes(postId);
+        return await _repo.GetLikes(postId,userId);
     }
     //COMMENT
      public async Task AddComment(Post comment, string userId,string postId)
@@ -42,9 +42,9 @@ public class PostService(PostRepo repo)
         await _repo.AddComment(comment, userId, postId);
     }
 
-    public async Task<List<Post>> GetComments(string postId)
+    public async Task<List<PostDTO>> GetComments(string postId,string userId)
     {
-        return await _repo.GetComments(postId);
+        return await _repo.GetComments(postId,userId);
     }
 
 }
