@@ -11,9 +11,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTO\**" />
+    <Compile Remove="Repositories\**" />
     <Compile Remove="Services\**" />
+    <Content Remove="DTO\**" />
+    <Content Remove="Repositories\**" />
     <Content Remove="Services\**" />
+    <EmbeddedResource Remove="DTO\**" />
+    <EmbeddedResource Remove="Repositories\**" />
     <EmbeddedResource Remove="Services\**" />
+    <None Remove="DTO\**" />
+    <None Remove="Repositories\**" />
     <None Remove="Services\**" />
   </ItemGroup>
 
@@ -38,8 +46,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
-    <Folder Include="DTO\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
 </Project>

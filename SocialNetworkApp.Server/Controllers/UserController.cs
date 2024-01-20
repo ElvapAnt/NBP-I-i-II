@@ -16,10 +16,15 @@ public class UserController(UserService service, ICacheService cacheService) : C
     public async Task<IActionResult> LogIn([FromRoute]string username,[FromRoute]string password)
     {
         var res = await _service.LogIn(username, password);
-        if(res!=null)
+        var sessionToken = Request.Cookies["SessionToken"];
+        if (res!=null)
         {
-            string sessionToken = Guid.NewGuid().ToString();    
-            await _cacheService.SetCacheValueAsync(sessionToken, res, TimeSpan.FromDays(7));
+
+            if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<User>(sessionToken) == null)
+            {
+                sessionToken = Guid.NewGuid().ToString();
+                await _cacheService.SetCacheValueAsync(sessionToken, res, TimeSpan.FromDays(7));
+            }
 
             var cookieOptions = new CookieOptions
             {
@@ -62,6 +67,7 @@ public class UserController(UserService service, ICacheService cacheService) : C
     [HttpPost("GetUserByUsername/{username}")]
     public async Task<IActionResult> GetUserByUsername([FromRoute] string username)
     {
+
         var user = await _service.GetUserByUsername(username);
         return Ok(user);
     }
