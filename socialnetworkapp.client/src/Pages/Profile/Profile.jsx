@@ -11,9 +11,10 @@ import React from "react";
 export async function ProfileLoader({ params })
 {
     const userId = params.userId
-
-    let result =  fetch(userController + '/GetUser/' + userId)
-    let response = fetch(postController + `/GetPosts/${userId}`)
+    const user = JSON.parse(localStorage.getItem(CURRENT_USER))
+    const currentId = user.userId
+    let result = fetch(userController + '/GetUser/' + userId+'/'+user.sessionToken)
+    let response = fetch(postController + `/GetPosts/${userId}/${currentId}`)
     result = await result
     if (result.ok)
     {
