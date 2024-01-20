@@ -42,7 +42,7 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
 
     public async Task<List<Chat>> GetInbox(string userId)
     {
-        var cacheKey = $"user:{userId}:inbox";
+        var cacheKey = $"{userId}:inbox";
         var cachedInbox = await _cacheService.GetCacheValueAsync<List<Chat>>(cacheKey);
         
         if(cachedInbox!=null)

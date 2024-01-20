@@ -54,6 +54,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task<List<PostDTO>> GetFeed(string userId, int count)
     {
+        //dobije se feed jednom pa se 
         var cacheKey = $"feed:{userId}";
         var cachedFeed = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
         if (cachedFeed != null)

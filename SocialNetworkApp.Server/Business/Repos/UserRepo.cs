@@ -56,7 +56,7 @@ public class UserRepo(IDriver driver)
     public async Task DeleteUser(string userId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (u:User{UserId:$userId}) DELETE u";
+        string query = "MATCH (u:User{UserId:$userId}) DETACH DELETE u";
         var parameters = new { userId };
         await session.RunAsync(query, parameters);
     }

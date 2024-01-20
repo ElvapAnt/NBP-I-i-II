@@ -42,8 +42,6 @@ async function login(username, password,navigate,setLoginState)
 
 }
 
-
-
 export default function LoginSkeleton({ flavor }) { 
 
     const [loginFailedState,setLoginFailedState]=useState(false)

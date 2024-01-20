@@ -22,23 +22,12 @@ public class UserService(UserRepo repo, ICacheService cacheService)
             throw new CustomException("User with given username already exists.");
         user.Password = _hasher.HashPassword(user, user.Password);
         await _repo.AddUser(user);
-        
-        //mozda i ovde kesiranje cim se doda u bazu
-        //cisto kao aktivni novi user npr
-        var cacheKey = $"user:{user.UserId}";
-        var cacheUser = new User
-        {
-            Username = user.Username,
-            Bio = user.Bio,
-            Thumbnail = user.Thumbnail
-        };
-        await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
     }
 
     public async Task<User> GetUser(string userId)
     {
         //provera da li postoji u kesu za brze prikupljanje
-        var cacheKey = $"user:{userId}";
+        var cacheKey = $"{userId}";
         var cachedUser = await _cacheService.GetCacheValueAsync<User>(cacheKey);
         if(cachedUser!=null)
             return cachedUser;
@@ -59,7 +48,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
             return cachedUser;
 
         User user = await _repo.GetUserByUsername(username) ?? throw new CustomException("No such user exists.");
-        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(15));
         return user;
     }
 
@@ -68,13 +57,13 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _repo.DeleteUser(userId);
 
         //brisanje iz kesa
-        var cacheKey = $"user:{userId}";
+        var cacheKey = $"{userId}";
         await _cacheService.RemoveCacheValueAsync(cacheKey);
     }
 
     public async Task UpdateUsername(string userId,string newUsername)
     {
-        User user =(await _repo.GetUser(userId))!;
+        User user = (await _repo.GetUser(userId))!;
         var oldUsername = user.Username;
         user.Username = newUsername;
 
@@ -87,7 +76,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         //invalidira se stari username i updateuje na novi
         await _cacheService.RemoveCacheValueAsync($"username:{oldUsername}");
 
-        var cacheKey = $"user:{userId}";
+        var cacheKey = $"{userId}";
         var cacheUser = new User
         {
             Username = user.Username,
@@ -109,7 +98,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
          await _cacheService.RemoveCacheValueAsync($"user:{userId}");
 
         //update cache isto kao za username 
-        var cacheKey = $"user:{userId}";
+        var cacheKey = $"{userId}";
         var cacheUser = new User
         {
             Username = user.Username,
@@ -117,14 +106,13 @@ public class UserService(UserRepo repo, ICacheService cacheService)
             Thumbnail = user.Thumbnail
         };
         await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
-
-        await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
     }
+
 
     public async Task<List<UserDTO>> GetFriends(string userId,int count,int skip)
     {
-        var cacheKey= $"user:{userId}:friends";
-        var cachedFriends = await _cacheService.GetListAsync<UserDTO>(cacheKey);
+        var cacheKey= $"{userId}:friends";
+        var cachedFriends = await _cacheService.GetListAsync<UserDTODTO>(cacheKey);
         //pogodak vraca kesiranu listu
         if (cachedFriends != null && cachedFriends.Any())
             return cachedFriends.Skip(skip).Take(count).ToList()!;
