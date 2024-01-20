@@ -93,7 +93,7 @@ public class PostRepo(IDriver driver)
         using var session = _driver.AsyncSession();
         string query = "CREATE (c:Comment:Post $comment) WITH c MATCH "+
         "(u:User{UserId:$userId}), (p:Post{PostId:$postId}), (c:Comment{PostId:$commentId}) CREATE (u)-[:POSTED]->(c) "+
-        "CREATE (p)-[:HAS_COMMENT]->(c) SET c.PostedByPic=u.Thumbnail";
+        "CREATE (p)-[:HAS_COMMENT]->(c) SET c.PostedByPic=u.Thumbnail SET c.PostedBy = u.Username";
         var parameters = new { comment,userId, postId,commentId = comment.PostId };
         await session.RunAsync(query, parameters);
     }

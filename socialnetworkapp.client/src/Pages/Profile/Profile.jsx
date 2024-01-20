@@ -1,5 +1,5 @@
 import { useLoaderData } from "react-router-dom";
-import { CURRENT_USER, postController, userController } from "../../Constants";
+import { CURRENT_USER, notificationController, postController, userController } from "../../Constants";
 import './Profile.css'
 import { Button, TextField } from "@mui/material";
 import { useState,useEffect } from "react";
@@ -35,9 +35,9 @@ export default function Profile()
 {
     
     const {profile,posts}=useLoaderData()
-    const { username, thumbnail, name, email, bio } = profile
+    const { username, thumbnail, name, email, bio,isFriend,sentRequest,recievedRequest,userId} = profile
     const [userState, setUserState] = useState({
-        username,email,bio,thumbnail,name
+        username,email,bio,thumbnail,name,isFriend,sentRequest,recievedRequest,userId
     })
     const [newUsername, setNewUsername] = useState('')
     const [newFile,setNewFile] = useState(null)
@@ -46,7 +46,7 @@ export default function Profile()
     {
         setPosts(posts.map(post =>
         {
-            return <Post props={post} />
+            return <Post props={post} key={post.postId} />
             }))
         }
         , [posts])
@@ -99,6 +99,28 @@ export default function Profile()
             }
         
     }
+    async function handleRequest()
+    {
+        const user = JSON.parse(localStorage.getItem(CURRENT_USER))
+        const result = await fetch(notificationController + `/AddRequest/${user.userId}/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: 'wants to be your friend.' })
+        })
+        if (result.ok)
+        {
+            setUserState(oldVal =>
+            {
+                return {
+                    ...oldVal,
+                    sentRequest:true
+                }
+            })
+            return
+        }
+        alert('Oh oh')
+        return
+    }
     let currentUser = JSON.parse(localStorage.getItem(CURRENT_USER))
     const enabled = currentUser.username===username
     return <div className='profile-and-posts-container'>
@@ -110,7 +132,7 @@ export default function Profile()
                     <p>{userState.email}</p>
                     <p>{userState.bio}</p>
                 </div>
-                {enabled && <div className='profile-change-info-container profile-info-container'>
+                {enabled ?<div className='profile-change-info-container profile-info-container'>
                     <div className="change-username">
                         <TextField value={newUsername}
                             type="text"
@@ -123,10 +145,11 @@ export default function Profile()
                             }
                         } onClick={ev => { handleClick() }}>Accept</Button>
                     </div>
-                    <UploadImage props={{inputId:'change-picture',labelText:'Change profile picture.',setState:setNewFile}} />
-                    
-                    
-
+                <UploadImage props={{ inputId: 'change-picture', labelText: 'Change profile picture.', setState: setNewFile }} />
+            </div> :
+                <div>
+                    {!isFriend ? <Button enabled={!recievedRequest&&!sentRequest} onClick={ev => handleRequest()}>{
+                    recievedRequest?"Request pending your approval.":sentRequest?"Request already sent.":"Send request."}</Button> : "Already friends with user"}
                 </div>}
             
         </div>

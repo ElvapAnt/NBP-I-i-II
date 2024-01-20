@@ -55,7 +55,7 @@ export default function PostComments()
     }}>
         {dataState.map(item =>
         {
-            return <Post props={item}/>
+            return <Post props={item} key={item.postId} />
             })}
         <div style={{
             position: 'absolute',

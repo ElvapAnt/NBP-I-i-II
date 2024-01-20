@@ -107,8 +107,8 @@ public class UserController(UserService service, ICacheService cacheService) : C
         return Ok(await _service.GetRecommendedFriends(userId, count, skip));
     }
 
-    [HttpGet("SearchForUsers/{usernamePattern}")]
-    public async Task<IActionResult> SearchForUsers([FromRoute] string usernamePattern,string userId)
+    [HttpGet("SearchForUsers/{usernamePattern}/{userId}")]
+    public async Task<IActionResult> SearchForUsers([FromRoute] string usernamePattern,[FromRoute]string userId)
     {
         return Ok(await _service.SearchForUsers(usernamePattern,userId));
     }

@@ -20,6 +20,7 @@ import { UserContextProvider } from './UserContext';
 import PostLikes from './Pages/PostLikes/PostLikes';
 import { PostLikesLoader } from './Pages/PostLikes/PostLikes';
 import PostComments, { PostCommentsLoader } from './Pages/PostComments/PostComments';
+import Search, { SearchLoader } from './Pages/Search/Search';
 const root = ReactDOM.createRoot(document.getElementById('root'))
 const router = createBrowserRouter([
   {
@@ -61,6 +62,11 @@ const router = createBrowserRouter([
         path: '/post/:postId/comments',
         element: <PostComments/>,
         loader: PostCommentsLoader
+      },
+      {
+        path: '/search/:usernamePattern',
+        element: <Search />,
+        loader: SearchLoader
     }]
   }
   

@@ -5,21 +5,15 @@ import { Button } from "@mui/material"
 import './Navbar.css'
 import { Outlet, useNavigate } from "react-router-dom"
 
-async function searchForUser(query)
+
+    
+export function Navbar({ children }) {
+    const navigate = useNavigate()
+
+    async function searchForUser(query)
     {
         try {
-            const request = await fetch(userController + `/CheckUserExists?username=${query}`)
-            if (request.ok)
-            {
-                const result = await request.text()
-                if (result === 'true')
-                {
-                    navigate('/')
-                    setChatState({
-                            talkingTo: query
-                        })
-                }
-            }
+          navigate('search/'+query)
         }
         catch (error)
         {
@@ -27,9 +21,6 @@ async function searchForUser(query)
         }
  
 }
-    
-export function Navbar({ children }) {
-    const navigate = useNavigate()
     const [query, setQuery] = useState("")
     let currentUser = localStorage.getItem(CURRENT_USER)
     const enabled = currentUser != '' && currentUser != null

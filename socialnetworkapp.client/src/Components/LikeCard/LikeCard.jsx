@@ -1,10 +1,6 @@
 import { Link } from "react-router-dom"
-import { CURRENT_USER } from "../../Constants"
 import './LikeCard.css'
-export function LikeCardLoader({ params })
-{
 
-}
 
 export default function LikeCard({ props })
 {

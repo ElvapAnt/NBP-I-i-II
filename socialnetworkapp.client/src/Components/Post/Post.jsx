@@ -44,8 +44,9 @@ export default function Post({ props })
 
     return (!isComment?<div className="post_container">
         <div className="post_user">
-            {postState.postpostedBy}
-            <img className="thumbnail" src={postState.postedByPic}></img>
+        <img className="thumbnail" src={postState.postedByPic}></img>
+            {postState.postedBy}
+
         </div>
         <img className="post_media" src={postState.mediaURL}></img>
         <div className="post_button_container">
@@ -58,9 +59,11 @@ export default function Post({ props })
     </div> :
         <div className="comment_container">
             <div className="post_user">
-                {postState.postpostedBy}
+               
                 <img className="thumbnail" src={postState.postedByPic}></img>
-                {postState.content}
+                <p>
+                    {`${postState.postedBy}:     ${postState.content}`}
+                </p>
             </div>
             <div className="comment_button_container">
                 <Button onClick={handleLike}>{postState.liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}</Button>
