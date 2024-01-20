@@ -19,11 +19,14 @@ function loginFailed(setLoginState)
 async function login(username, password,navigate,setLoginState)
 {
     try {
-        const response = await fetch(`${userController}/LogIn/${username}/${password}`)
+        const response = await fetch(`${userController}/LogIn/${username}/${password}`,{
+    })
         if (response.statusText == "OK")
         {
             const jsonResponse = await response.json() 
-            loginUser(jsonResponse,navigate)
+            const user = jsonResponse.item1
+            user.sessionToken = jsonResponse.item2
+            loginUser(user,navigate)
             
         }
         else

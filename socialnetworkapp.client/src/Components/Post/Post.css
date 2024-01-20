@@ -29,3 +29,19 @@
     width:40px;
     height: 40px;
 }
+
+.comment_container
+{
+    width:90%;
+    height:100px;
+    margin:30px;
+    display:flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.comment_button_container{
+    display: flex;
+    flex-direction: row;
+}

@@ -55,7 +55,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
     public async Task<List<PostDTO>> GetFeed(string userId, int count)
     {
         var cacheKey = $"feed:{userId}";
-        var cachedFeed = await _cacheService.GetCacheValueAsync<List<Post>>(cacheKey);
+        var cachedFeed = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
         if (cachedFeed != null)
         {
             return cachedFeed;
@@ -86,7 +86,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
         //kesira sve ljude koji su lajkovali do sad
         var cacheKey = $"post:likes:{postId}";
         
-        var cachedLikes = await _cacheService.GetCacheValueAsync<List<User>>(cacheKey);
+        var cachedLikes = await _cacheService.GetCacheValueAsync<List<UserDTO>>(cacheKey);
         if (cachedLikes != null)
         {
             return cachedLikes;
@@ -110,7 +110,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
     public async Task<List<PostDTO>> GetComments(string postId,string userId)
     {
         var cacheKey = $"post:comments:{postId}";
-        var cachedComments = await _cacheService.GetCacheValueAsync<List<Post>>(cacheKey);
+        var cachedComments = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
         if (cachedComments != null)
         {
             return cachedComments;

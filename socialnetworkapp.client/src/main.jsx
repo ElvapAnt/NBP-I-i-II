@@ -16,6 +16,10 @@ import Home from './Pages/Home/Home';
 import Profile from './Pages/Profile/Profile';
 import { ProfileLoader } from './Pages/Profile/Profile';
 import AddPost from './Pages/AddPost/AddPost';
+import { UserContextProvider } from './UserContext';
+import PostLikes from './Pages/PostLikes/PostLikes';
+import { PostLikesLoader } from './Pages/PostLikes/PostLikes';
+import PostComments, { PostCommentsLoader } from './Pages/PostComments/PostComments';
 const root = ReactDOM.createRoot(document.getElementById('root'))
 const router = createBrowserRouter([
   {
@@ -47,17 +51,24 @@ const router = createBrowserRouter([
       {
         path: '/add_post',
         element:<AddPost/>
+      },
+      {
+        path: '/post/:postId/likes',
+        element: <PostLikes />,
+        loader: PostLikesLoader
+      },
+      {
+        path: '/post/:postId/comments',
+        element: <PostComments/>,
+        loader: PostCommentsLoader
     }]
   }
   
 ])
 root.render(
-
-  <RouterProvider router={router}/>
-
-
-
-
+  <UserContextProvider>
+    <RouterProvider router={router}/>
+  </UserContextProvider>
 );
 
 

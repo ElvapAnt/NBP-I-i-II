@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button} from '@mui/material';
 
 
-export default function MessageBox({chatUid,sendTo,onChooseEncryption})
+export default function MessageBox({chatUid,sendTo})
 {
     const [inputState, setInputState] = useState('')
     const navigate = useNavigate()

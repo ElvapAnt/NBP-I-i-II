@@ -46,12 +46,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         //promasaj, pa se ide u bazu
         User user = await _repo.GetUser(userId) ?? throw new CustomException("No such user exists.");
         //poco da se ne bi slao password i email
-        cachedUser = new User
-        {
-            Username = user.Username,
-            Bio = user.Bio,
-            Thumbnail = user.Thumbnail
-        };
+        cachedUser = user;
         await _cacheService.SetCacheValueAsync(cacheKey, cachedUser, TimeSpan.FromMinutes(30));
         return user;
     }
@@ -122,23 +117,14 @@ public class UserService(UserRepo repo, ICacheService cacheService)
             Thumbnail = user.Thumbnail
         };
         await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
-    }
 
-        //update cache isto kao za username 
-        var cacheKey = $"user:{userId}";
-        var cacheUser = new User
-        {
-            Username = user.Username,
-            Bio = user.Bio,
-            Thumbnail = user.Thumbnail
-        };
         await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
     }
 
     public async Task<List<UserDTO>> GetFriends(string userId,int count,int skip)
     {
         var cacheKey= $"user:{userId}:friends";
-        var cachedFriends = await _cacheService.GetListAsync<User>(cacheKey);
+        var cachedFriends = await _cacheService.GetListAsync<UserDTO>(cacheKey);
         //pogodak vraca kesiranu listu
         if (cachedFriends != null && cachedFriends.Any())
             return cachedFriends.Skip(skip).Take(count).ToList()!;

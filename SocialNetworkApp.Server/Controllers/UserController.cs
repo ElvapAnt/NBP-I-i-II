@@ -23,14 +23,16 @@ public class UserController(UserService service, ICacheService cacheService) : C
 
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTimeOffset.UtcNow.AddDays(7)
+                HttpOnly = false,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Secure=false,
+
             };
             Response.Cookies.Append("SessionToken", sessionToken, cookieOptions);
 
             res.Password = "";
-            return Ok(res);
+            return Ok(Tuple.Create<User, string>(res, sessionToken));
         }
         else
         {
@@ -45,10 +47,10 @@ public class UserController(UserService service, ICacheService cacheService) : C
         return Ok(user.UserId);
     }
 
-    [HttpGet("GetUser/{userId}")]
-    public async Task<IActionResult> GetUser([FromRoute] string userId)
+    [HttpGet("GetUser/{userId}/{sessionToken}")]
+    public async Task<IActionResult> GetUser([FromRoute] string userId,[FromRoute]string sessionToken)
     {
-        var sessionToken = Request.Cookies["SessionToken"];
+        //var sessionToken = Request.Cookies["SessionToken"];
 
         if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<User>(sessionToken) == null)
         {

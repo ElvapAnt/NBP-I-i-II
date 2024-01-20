@@ -38,8 +38,22 @@ async function signup(signUpState,navigate,setLoginState)
 
     if (response.statusText == 'OK')
     {
-        const userId =await response.text()
-        loginUser({...signUpState,userId},navigate)
+        const userId = await response.text()
+        const response2 = await fetch(userController + `/LogIn/${signUpState.username}/${signUpState.password}`,
+            {
+        })
+        if (response2.ok)
+        {
+            const jsonResponse = await response2.json() 
+            const user = jsonResponse.item1
+            user.sessionToken = jsonResponse.item2
+            loginUser(user,navigate)
+        }
+        else
+        {
+            loginFailed(setLoginState,await response.text())
+            }
+
     }
     else
     {
