@@ -55,7 +55,7 @@ export default function Chat() {
     const webSocketRef = useRef(null);
 
     const initWebSocket = (chatId) => {
-        webSocketRef.current = new WebSocket(`wss://localhost:5173/chat?chatId=${chatId}`); // Replace with your WebSocket server endpoint
+        webSocketRef.current = new WebSocket(`ws://localhost:5114/chat?chatId=${chatId}`); // Replace with your WebSocket server endpoint
         console.log(`WebSocket connected od strane usera : ${localStorage.getItem(CURRENT_USER)}`);
         webSocketRef.current.onmessage = (event) => {
             const message = JSON.parse(event.data);

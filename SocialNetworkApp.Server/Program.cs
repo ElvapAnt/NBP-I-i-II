@@ -66,6 +66,8 @@ builder.Services.AddScoped<ChatService, ChatService>();
 builder.Services.AddScoped<NotificationRepo, NotificationRepo>();
 builder.Services.AddScoped<NotificationService, NotificationService>();
 
+builder.Services.AddScoped<WebSocketService, WebSocketService>();
+
 #endregion
 
 builder.Services.AddCors(action =>
