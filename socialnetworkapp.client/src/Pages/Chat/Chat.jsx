@@ -61,29 +61,8 @@ export default function Home() {
     }
     
     const currentUser = JSON.parse(localStorage.getItem(CURRENT_USER))
-    const [query, setQuery] = useState("")
-    async function searchForUser(query)
-    {
-       /*  try {
-            const request = await fetch(userController + `/CheckUserExists?username=${query}`)
-            if (request.ok)
-            {
-                const result = await request.text()
-                if (result === 'true')
-                {
-                    navigate('/')
-                    setChatState({
-                            talkingTo: query
-                        })
-                }
-            }
-        }
-        catch (error)
-        {
-            console.log(error.message)
-        } */
- 
-    }
+
+    
     
     React.useEffect(
         () => {
@@ -120,28 +99,6 @@ export default function Home() {
     }, [])
     
     return <div className="chat-container">
-
-        <nav className="navbar">
-        <SearchBar query={query} setQuery={setQuery} onQueryExecute={(ev) =>searchForUser(query)}/>
-            <ul>
-                <li>
-                    <Button variant="text" sx={{
-                        color: "white",
-                        marginRight: "10px",
-                        height: "70px"
-                    }} onClick={
-                        (event) => {
-                            localStorage.removeItem(CURRENT_USER)
-                            localStorage.removeItem(CURRENT_CHAT)
-                            sessionStorage.removeItem(TALKING_TO)
-                            navigate('/login')
-                        }
-                    }>
-                        Log out
-                    </Button>
-                </li>
-            </ul>
-        </nav>
         <div className="chat-content">
             <div className="chat-history">
                 {inboxArray}

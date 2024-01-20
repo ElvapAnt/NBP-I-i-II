@@ -1,0 +1,16 @@
+@import "../../index.css";
+
+
+.upload-label
+{
+    color: var(--sky)
+}
+.upload-label:hover
+{
+    color: #2980b9;
+}
+
+.upload-label:active
+{
+    color: #102e43;;
+}

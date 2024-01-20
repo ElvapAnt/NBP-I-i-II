@@ -1,0 +1,46 @@
+.profile-container
+{
+    
+    display:flex;
+    flex-direction: row;
+    justify-content: start;
+    padding:20px;
+}
+
+.profile-picture
+{
+    width:350px;
+    height: 350px;
+    margin:20px;
+}
+
+.profile-info-container
+{
+    display:flex;
+    flex-direction: column;
+    justify-content: start;
+}
+.profile-change-info-container
+{
+    display:flex;
+    flex-direction: column;
+    justify-content: start;
+    margin-left: 100px;
+}
+
+.profile-and-posts-container
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    width: calc(100vw);
+    height: calc(100vh - 70px);
+}
+
+.posts-container
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+}
