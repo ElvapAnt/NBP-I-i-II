@@ -27,7 +27,7 @@ public class PostRepo(IDriver driver)
         "WHERE NOT p:Comment  with user,u,p RETURN p {.*, Liked: EXISTS ((user)-[:LIKES]->(p))} ORDER BY p.Timestamp DESC SKIP $skip LIMIT $count";
         var parameters = new { currentUserId,userId,skip,count };
         var result = await session.RunAsync(query, parameters);
-        var list =await result.ToListAsync();
+        var list = await result.ToListAsync();
         return RecordMapper.ToPostList(list, "p");
     }
 
@@ -60,7 +60,7 @@ public class PostRepo(IDriver driver)
         var params0 = new { userId, postId };
         var result = await session.RunAsync(query0, params0);
         var record = await result.SingleAsync();
-        bool value =record["value"].As<bool>();
+        bool value = record["value"].As<bool>();
 
         int step = !value ? 1 : -1;
         string query = "MATCH (u:User{UserId:$userId}), (p:Post{PostId:$postId}) WITH p,u " +

@@ -24,6 +24,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
             PostId = post.PostId,
             UserId = userId
         });
+
         await _cacheService.PublishAsync("posts:added", postAddedMessage);
 
         //za testiranje samo 10 prijatelja 
@@ -40,8 +41,18 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task<List<PostDTO>> GetPosts(string userId, int count, int skip,string currentUserId)
     {
-        var posts = await _repo.GetPosts(userId,count,skip,currentUserId);
+
+        //provera da li postoji u kesu za brze prikupljanje
         var cacheKey = $"posts:{userId}";
+        var cachedPosts = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
+        if (cachedPosts != null)
+        {
+            return cachedPosts;
+        }
+
+        var posts = await _repo.GetPosts(userId,count,skip,currentUserId);
+        await _cacheService.SetCacheValueAsync(cacheKey, posts, TimeSpan.FromMinutes(5));
+        return posts;
     }
 
     public async Task DeletePost(string postId)
@@ -69,6 +80,10 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task LikePost(string userId,string postId)
     {
+        //invalidira se feed korisnika
+        var cacheKey = $"feed:{userId}";
+        await _cacheService.RemoveCacheValueAsync(cacheKey);
+
         //invalidira se kesirana lista lajkova
         var likesListCacheKey = $"{postId}:likes";
         await _cacheService.RemoveCacheValueAsync(likesListCacheKey);
@@ -101,17 +116,23 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
     //COMMENT
     public async Task AddComment(Post comment, string userId, string postId)
     {
+
         await _repo.AddComment(comment, userId, postId);
 
-        var commentsCacheKey = $"post:comments:{postId}";
+        //invalidira se kesirana lista komentara
+        var commentsCacheKey = $"comments:{postId}";
         await _cacheService.RemoveCacheValueAsync(commentsCacheKey);
+
+        //invalidira se feed za korisnika da vidi promenu
+        var cacheKey = $"feed:{userId}";
+        await _cacheService.RemoveCacheValueAsync(cacheKey);
 
         await _cacheService.PublishAsync($"post:commented:{postId}", JsonConvert.SerializeObject(comment));
     }
 
     public async Task<List<PostDTO>> GetComments(string postId,string userId)
     {
-        var cacheKey = $"post:comments:{postId}";
+        var cacheKey = $"comments:{postId}";
         var cachedComments = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
         if (cachedComments != null)
         {

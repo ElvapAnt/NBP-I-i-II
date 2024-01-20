@@ -24,20 +24,35 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _repo.AddUser(user);
     }
 
-    public async Task<User> GetUser(string userId)
+    public async Task<UserDTO> GetUser(string userId)
     {
         //provera da li postoji u kesu za brze prikupljanje
         var cacheKey = $"{userId}";
-        var cachedUser = await _cacheService.GetCacheValueAsync<User>(cacheKey);
+        var cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheKey);
         if(cachedUser!=null)
             return cachedUser;
 
+
         //promasaj, pa se ide u bazu
         User user = await _repo.GetUser(userId) ?? throw new CustomException("No such user exists.");
+
+        var userDto = new UserDTO
+        {
+            UserId = user.UserId,
+            Username = user.Username,
+            Thumbnail = user.Thumbnail,
+            Bio = user.Bio,
+            Name = user.Name,
+            Email = user.Email,
+            IsFriend = false,
+            RecievedRequest = false,
+            SentRequest = false
+        };
+
         //poco da se ne bi slao password i email
       
-        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
-        return user;
+        await _cacheService.SetCacheValueAsync(cacheKey, userDto, TimeSpan.FromMinutes(15));
+        return userDto;
     }
 
     public async Task<User> GetUserByUsername(string username)
@@ -77,7 +92,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _cacheService.RemoveCacheValueAsync($"username:{oldUsername}");
 
         var cacheKey = $"{userId}";
-        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(15));
     }
 
    public async Task UpdateThumbnail(string userId,string newThumbnail)
@@ -93,7 +108,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         //update cache isto kao za username 
         var cacheKey = $"{userId}";
        
-        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(15));
     }
 
 
