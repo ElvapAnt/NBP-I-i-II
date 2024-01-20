@@ -53,7 +53,7 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
             return cachedInbox;
         
         var inbox  = await _repo.GetInbox(userId);
-        await _cacheService.SetCacheValueAsync(cacheKey, inbox, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, inbox, TimeSpan.FromMinutes(1));
         return inbox;
     }
 

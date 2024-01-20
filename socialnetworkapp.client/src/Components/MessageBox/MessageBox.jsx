@@ -6,11 +6,9 @@ import { useNavigate } from 'react-router-dom'
 import { Button} from '@mui/material';
 
 
-export default function MessageBox({chatUid,sendTo,onSendMessage,onChooseEncryption})
+export default function MessageBox({chatUid,sendTo,onSendMessage})
 {
     const [inputState, setInputState] = useState('')
-    const navigate = useNavigate()
-    const [openDialog, setOpenDialog] = useState(false)
     
     const onInputChanged = (e) => {
         setInputState(e.target.value);
@@ -18,8 +16,8 @@ export default function MessageBox({chatUid,sendTo,onSendMessage,onChooseEncrypt
 
     const onSendClicked = () => {
         if (inputState.trim() !== "") {
-            onSendMessage(inputState, sendTo);
-            console.log(sendTo);
+            onSendMessage(inputState,chatUid);
+            console.log(inputState);
             setInputState(""); // Clear the input after sending
         }
     };

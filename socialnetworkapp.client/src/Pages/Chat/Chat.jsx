@@ -43,10 +43,9 @@ export async function ChatLoader({ params }) {
         console.log(error.message)
         return { inboxArray: [], currentChat: null }
     }
-    return null
 }
 
-export default function Home() {
+export default function Chat() {
 
     const navigate = useNavigate()
     const loaderData = useLoaderData()
@@ -79,8 +78,8 @@ export default function Home() {
     const handleSendMessage = async (content, recipientId) => {
         // Send message to the server
         const message = {
-            Content: content,
-            SenderId: currentUser.userId
+            content: content,
+            senderId: currentUser.userId
         };
         try {
             const response = await fetch(`${chatController}/SendMessage/${recipientId}`, {
@@ -92,7 +91,7 @@ export default function Home() {
             });
 
             if (response.ok) {
-                console.log("Message sent successfully:", response.data);
+                console.log("Message sent successfully:", content);
             } else {
                 console.error("Failed to send message, server responded with status:", response.status);
             }
@@ -144,6 +143,7 @@ export default function Home() {
                         chatUid={item.chatId}
                         chatItem={item}
                         onChatSelect={setCurrentChat}
+                        key={item.chatId}
                     />
                 }))
             }
@@ -181,23 +181,7 @@ export default function Home() {
                     {chatState != undefined&&chatState.messages!=undefined && chatState.messages}
                 </div>
                 <MessageBox chatUid={chatState.chatId != undefined ? chatState.chatId : undefined}
-                    sendTo={sessionStorage.getItem(TALKING_TO) != undefined ? sessionStorage.getItem(TALKING_TO) : undefined}
-                    onSendMessage = {handleSendMessage}
-                    onChooseEncryption={(
-                        encryptionString
-                        ) => {
-                            switch (encryptionString)
-                            {
-                                case RAILFENCE:
-                                    setCryptoAlg(railfence)
-                                    break
-                                case XXTEA_CBC:
-                                    setCryptoAlg(xxtea_cbc)
-                                    break
-                                default:
-                                    break;
-                            }
-                    }}/>
+                    onSendMessage = {handleSendMessage}/>
             </div>
         </div>
     </div>
