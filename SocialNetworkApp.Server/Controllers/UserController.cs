@@ -29,7 +29,7 @@ public class UserController(UserService service, ICacheService cacheService) : C
             };
             Response.Cookies.Append("SessionToken", sessionToken, cookieOptions);
 
-            res.Password = null;
+            res.Password = "";
             return Ok(res);
         }
         else
