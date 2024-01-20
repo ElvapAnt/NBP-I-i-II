@@ -36,7 +36,7 @@ async function signup(signUpState,navigate,setLoginState)
         body: JSON.stringify(signUpState)
     })
 
-    if (response.statusText == 'OK')
+    if (response.status === 200)
     {
         const userId =await response.text()
         loginUser({...signUpState,userId},navigate)

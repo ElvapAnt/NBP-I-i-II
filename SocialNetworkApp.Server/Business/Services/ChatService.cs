@@ -29,10 +29,14 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
             chat = await FindOrCreateChat(recipientId, message.SenderId);
             recipientId = chat.ChatId;
         }
+
+        var cacheKey = $"{recipientId}:messages";
+        await _cacheService.RemoveCacheValueAsync(cacheKey);
+       
         await _repo.AddMesage(message, recipientId);
 
         var serializedMessage = JsonConvert.SerializeObject(message);
-        await _cacheService.PublishAsync($"chat:{recipientId}", serializedMessage);
+        await _cacheService.PublishAsync($"{recipientId}", serializedMessage);
 
         //mozda da procesira notifikaciju za poruku
         await _cacheService.EnqueueMessageAsync("messageQueue", serializedMessage);
@@ -55,7 +59,7 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
 
     public async Task<List<Message>> GetMessages(string chatId)
     {
-        var cacheKey = $"chat:{chatId}:messages";
+        var cacheKey = $"{chatId}:messages";
         var cachedMessages = await _cacheService.GetCacheValueAsync<List<Message>>(cacheKey);
         
         if(cachedMessages!=null)

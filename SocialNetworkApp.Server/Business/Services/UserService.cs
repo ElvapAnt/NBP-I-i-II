@@ -35,13 +35,8 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         //promasaj, pa se ide u bazu
         User user = await _repo.GetUser(userId) ?? throw new CustomException("No such user exists.");
         //poco da se ne bi slao password i email
-        cachedUser = new User
-        {
-            Username = user.Username,
-            Bio = user.Bio,
-            Thumbnail = user.Thumbnail
-        };
-        await _cacheService.SetCacheValueAsync(cacheKey, cachedUser, TimeSpan.FromMinutes(30));
+      
+        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
         return user;
     }
 
@@ -82,14 +77,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _cacheService.RemoveCacheValueAsync($"username:{oldUsername}");
 
         var cacheKey = $"{userId}";
-        var cacheUser = new User
-        {
-            Username = user.Username,
-            Bio = user.Bio,
-            Thumbnail = user.Thumbnail
-        };
-        
-        await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
     }
 
    public async Task UpdateThumbnail(string userId,string newThumbnail)
@@ -104,13 +92,8 @@ public class UserService(UserRepo repo, ICacheService cacheService)
 
         //update cache isto kao za username 
         var cacheKey = $"{userId}";
-        var cacheUser = new User
-        {
-            Username = user.Username,
-            Bio = user.Bio,
-            Thumbnail = user.Thumbnail
-        };
-        await _cacheService.SetCacheValueAsync(cacheKey, cacheUser, TimeSpan.FromMinutes(30));
+       
+        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(30));
     }
 
 

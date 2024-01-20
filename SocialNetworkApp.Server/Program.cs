@@ -99,7 +99,7 @@ app.UseWebSockets();
 // Configure WebSocket requests to be handled by WebSocketService
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path == "/ws") // Or whatever path you want to handle WebSocket requests
+    if (context.Request.Path == "/chat") // Or whatever path you want to handle WebSocket requests
     {
         if (context.WebSockets.IsWebSocketRequest)
         {
