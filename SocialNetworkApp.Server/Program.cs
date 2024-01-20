@@ -4,6 +4,8 @@ using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Settings;
 using SocialNetworkApp.Server.Business.Services;
 using SocialNetworkApp.Server.Error;
+using StackExchange.Redis;
+using SocialNetworkApp.Server.Business.Services.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +16,29 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+#region redisconfig
 builder.Services.Configure<RedisSettings>(
     builder.Configuration.GetSection("RedisSettings"));
 builder.Services.AddSingleton<IRedisSettings>(
     sp=>sp.GetRequiredService<IOptions<RedisSettings>>().Value);
 
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<RedisSettings>>().Value;
+    return ConnectionMultiplexer.Connect(settings.ConnectionString);
+});
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    var redisSettings = builder.Configuration.GetSection("RedisSettings").Get<RedisSettings>();
+    options.Configuration = redisSettings!.ConnectionString;
+    options.InstanceName = redisSettings.InstanceName;
+});
+
+builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+#endregion
+
+#region neo4jconfig
 builder.Services.Configure<NeoSettings>(builder.Configuration.GetSection("NeoSettings"));
 builder.Services.AddSingleton<INeoSettings>(
        sp=>sp.GetRequiredService<IOptions<NeoSettings>>().Value);
@@ -46,6 +66,8 @@ builder.Services.AddScoped<ChatService, ChatService>();
 builder.Services.AddScoped<NotificationRepo, NotificationRepo>();
 builder.Services.AddScoped<NotificationService, NotificationService>();
 
+#endregion
+
 builder.Services.AddCors(action =>
 {
     action.AddPolicy("CORS", policy =>
@@ -53,7 +75,6 @@ builder.Services.AddCors(action =>
         policy.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
     });
 });
-
 
 
 var app = builder.Build();
@@ -72,6 +93,30 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("CORS");
 app.UseHttpsRedirection();
+
+app.UseWebSockets();
+
+// Configure WebSocket requests to be handled by WebSocketService
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/ws") // Or whatever path you want to handle WebSocket requests
+    {
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            // Resolve WebSocketService for the current request
+            var webSocketService = context.RequestServices.GetRequiredService<WebSocketService>();
+            await webSocketService.HandleWebSocketAsync(context);
+        }
+        else
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        }
+    }
+    else
+    {
+        await next();
+    }
+});
 
 app.UseAuthorization();
 

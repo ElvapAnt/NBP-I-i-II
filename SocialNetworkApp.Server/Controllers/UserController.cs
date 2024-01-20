@@ -1,20 +1,41 @@
 using Microsoft.AspNetCore.Mvc;
 using SocialNetworkApp.Server.Data.Entities;
 using SocialNetworkApp.Server.Business.Services;
+using SocialNetworkApp.Server.Business.Services.Redis;
 
 namespace SocialNetworkApp.Server.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class UserController(UserService service) : ControllerBase
+public class UserController(UserService service, ICacheService cacheService) : ControllerBase
 {
     private readonly UserService _service = service;
+    private readonly ICacheService _cacheService = cacheService;
 
     [HttpGet("LogIn/{username}/{password}")]
     public async Task<IActionResult> LogIn([FromRoute]string username,[FromRoute]string password)
     {
         var res = await _service.LogIn(username, password);
-        return res != null ? Ok(res) : BadRequest("Error logging in");
+        if(res!=null)
+        {
+            string sessionToken = Guid.NewGuid().ToString();    
+            await _cacheService.SetCacheValueAsync(sessionToken, res, TimeSpan.FromDays(7));
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("SessionToken", sessionToken, cookieOptions);
+
+            res.Password = null;
+            return Ok(res);
+        }
+        else
+        {
+            return BadRequest("Error logging in");
+        }
     }
     [HttpPost("AddUser")]
     public async Task<IActionResult> AddUser([FromBody] User user)
@@ -24,9 +45,16 @@ public class UserController(UserService service) : ControllerBase
         return Ok(user.UserId);
     }
 
-     [HttpPost("GetUser/{userId}")]
+    [HttpPost("GetUser/{userId}")]
     public async Task<IActionResult> GetUser([FromRoute] string userId)
     {
+        var sessionToken = Request.Cookies["SessionToken"];
+
+        if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<User>(sessionToken) == null)
+        {
+            return Unauthorized("No active session found. Please log in.");
+        }
+
         var user = await _service.GetUser(userId);
         return Ok(user);
     }

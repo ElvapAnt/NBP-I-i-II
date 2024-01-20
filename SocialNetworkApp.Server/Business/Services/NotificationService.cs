@@ -7,7 +7,7 @@ public class NotificationService(NotificationRepo repo)
 {
     private readonly NotificationRepo _repo = repo;
 
-     public async Task AddRequest(Notification notification,string fromId,string toId)
+    public async Task AddRequest(Notification notification,string fromId,string toId)
     {
         await _repo.AddRequest(notification, fromId, toId);
     }
