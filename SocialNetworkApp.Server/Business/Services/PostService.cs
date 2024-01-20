@@ -40,7 +40,8 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task<List<PostDTO>> GetPosts(string userId, int count, int skip,string currentUserId)
     {
-        return await _repo.GetPosts(userId,count,skip,currentUserId);
+        var posts = await _repo.GetPosts(userId,count,skip,currentUserId);
+        var cacheKey = $"posts:{userId}";
     }
 
     public async Task DeletePost(string postId)
@@ -69,7 +70,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
     public async Task LikePost(string userId,string postId)
     {
         //invalidira se kesirana lista lajkova
-        var likesListCacheKey = $"post:likes:{postId}";
+        var likesListCacheKey = $"{postId}:likes";
         await _cacheService.RemoveCacheValueAsync(likesListCacheKey);
 
         var likesCacheKey = $"likes:count:{postId}";
@@ -85,7 +86,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
     public async Task<List<UserDTO>> GetLikes(string postId,string userId)
     {
         //kesira sve ljude koji su lajkovali do sad
-        var cacheKey = $"post:likes:{postId}";
+        var cacheKey = $"{postId}:likes";
         
         var cachedLikes = await _cacheService.GetCacheValueAsync<List<UserDTO>>(cacheKey);
         if (cachedLikes != null)
