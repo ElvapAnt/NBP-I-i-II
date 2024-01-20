@@ -1,11 +1,10 @@
 import './ChatBubble.css'
 import { CURRENT_USER } from '../../Constants'
 
-export default function ChatBubble({ message})
+export default function ChatBubble({message})
 {
-    
     const direction = message.recipient === JSON.parse(localStorage.getItem(CURRENT_USER)).username
-    const file = message.file
+   /* const file = message.file*/
     return <div className="chatbubble-container"
         style={{
         flexDirection:direction?'row':'row-reverse'
@@ -16,7 +15,7 @@ export default function ChatBubble({ message})
             backgroundColor: direction ? 'var(--sky)' : 'var(--soft-grey)'
         }
     }>
-        {content}
+        {message.content}
     </div>
         </div>
 }
