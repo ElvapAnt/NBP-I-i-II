@@ -115,14 +115,14 @@ public class UserService(UserRepo repo, ICacheService cacheService)
     public async Task<List<UserDTO>> GetFriends(string userId,int count,int skip)
     {
         var cacheKey= $"{userId}:friends";
-        var cachedFriends = await _cacheService.GetListAsync<UserDTO>(cacheKey);
+        var cachedFriends = await _cacheService.GetCacheValueAsync<List<UserDTO>>(cacheKey);
         //pogodak vraca kesiranu listu
         if (cachedFriends != null && cachedFriends.Any())
             return cachedFriends.Skip(skip).Take(count).ToList()!;
 
         //promasaj, pa se ide u bazu
         var friends = await _repo.GetFriends(userId, count, skip);
-        await _cacheService.AddToListAsync(cacheKey, friends);
+        await _cacheService.SetCacheValueAsync(cacheKey, friends);
         return friends;
     }
 

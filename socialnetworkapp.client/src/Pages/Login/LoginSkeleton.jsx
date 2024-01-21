@@ -21,7 +21,7 @@ async function login(username, password,navigate,setLoginState)
     try {
         const response = await fetch(`${userController}/LogIn/${username}/${password}`,{
     })
-        if (response.statusText == "OK")
+        if (response.status === 200)
         {
             const jsonResponse = await response.json() 
             const user = jsonResponse.item1

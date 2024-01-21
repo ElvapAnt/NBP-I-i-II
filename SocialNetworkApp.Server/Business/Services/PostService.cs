@@ -25,17 +25,39 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
             UserId = userId
         });
 
-        await _cacheService.PublishAsync("posts:added", postAddedMessage);
-
         //za testiranje samo 10 prijatelja 
         //invalidira prethodno kesiran feed da ne bi uzeo stari bez novog posta
         //mada svakako se invalidira kroz 5 minuta, ali ajde
         var friends = await _userService.GetFriends(userId,10,0);
         foreach (var friend in friends)
         {
+            //sacuva se u kes za profil
+            var postCacheKey = $"posts:{userId}";
             var cacheKey = $"feed:{friend.UserId}";
-            await _cacheService.RemoveCacheValueAsync(cacheKey);
+            var postCache = await _cacheService.GetCacheValueAsync<List<PostDTO>>(postCacheKey);
+            var cachedFeed = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
+            if (cachedFeed != null)
+            {
+                var p = new PostDTO
+                {
+                    PostId = post.PostId,
+                    Content = post.Content,
+                    MediaURL = post.MediaURL,
+                    PostedBy = post.PostedBy,
+                    PostedByPic = post.PostedByPic,
+                    Timestamp = post.Timestamp,
+                    Likes = 0,
+                    Liked = false
+                };
+                cachedFeed.Add(p);
+                if(postCache!=null)
+                    postCache.Add(p);
+                await _cacheService.SetCacheValueAsync(cacheKey, cachedFeed, TimeSpan.FromMinutes(5));
+                await _cacheService.SetCacheValueAsync(postCacheKey, cachedFeed, TimeSpan.FromMinutes(10));
+            }
         }
+
+        await _cacheService.PublishAsync("posts:added", postAddedMessage);
 
     }
 
@@ -55,13 +77,14 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
         return posts;
     }
 
+
     public async Task DeletePost(string postId)
     {
         await _repo.DeletePost(postId);
 
         await _cacheService.RemoveCacheValueAsync($"post:{postId}");
-        await _cacheService.RemoveCacheValueAsync($"post:likes:{postId}");
-        await _cacheService.RemoveCacheValueAsync($"post:comments:{postId}");
+        await _cacheService.RemoveCacheValueAsync($"{postId}:likes");
+        await _cacheService.RemoveCacheValueAsync($"comments:{postId}");
     }
 
     public async Task<List<PostDTO>> GetFeed(string userId, int count)
@@ -80,19 +103,39 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task LikePost(string userId,string postId)
     {
-        //invalidira se feed korisnika
+
         var cacheKey = $"feed:{userId}";
-        await _cacheService.RemoveCacheValueAsync(cacheKey);
-
-        //invalidira se kesirana lista lajkova
         var likesListCacheKey = $"{postId}:likes";
-        await _cacheService.RemoveCacheValueAsync(likesListCacheKey);
-
         var likesCacheKey = $"likes:count:{postId}";
+
+        // Get the current cached likes list and like count
+        var postLikes = await _cacheService.GetCacheValueAsync<List<UserDTO>>(likesListCacheKey);
         var cachedLikes = await _cacheService.GetCacheValueAsync<CacheInt>(likesCacheKey);
-        var newLikeCount = cachedLikes != null ? cachedLikes.Value + 1 : 1; // Assuming new like is added
-        await _cacheService.SetCacheValueAsync(likesCacheKey, new CacheInt(newLikeCount), TimeSpan.FromMinutes(30));
-        
+        var currentUser = await _userService.GetUser(userId);
+
+        if (postLikes != null && cachedLikes != null && currentUser != null)
+        {
+
+            bool hasLiked = postLikes?.Any(u => u.UserId == userId) ?? false;
+
+            if (hasLiked)
+            {
+                postLikes!.Remove(postLikes.First(u => u.UserId == userId));
+                cachedLikes!.Value -= 1;
+            }
+            else
+            {
+                postLikes!.Add(currentUser); // Assuming UserDTO structure
+                cachedLikes.Value += 1;
+            }
+
+            await _cacheService.SetCacheValueAsync(likesListCacheKey, postLikes, TimeSpan.FromMinutes(10));
+            await _cacheService.SetCacheValueAsync(likesCacheKey, new CacheInt(cachedLikes.Value), TimeSpan.FromMinutes(10));
+
+            // Invalidate user feed cache
+            await _cacheService.RemoveCacheValueAsync(cacheKey);
+        }
+
         // Publish like event
         await _cacheService.PublishAsync($"post:liked:{postId}", userId);
         await _repo.LikePost(userId, postId);
@@ -110,22 +153,30 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
         }
 
         var likes = await _repo.GetLikes(postId,userId);
-        await _cacheService.SetCacheValueAsync(cacheKey, likes, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, likes, TimeSpan.FromMinutes(10));
         return likes;
     }
     //COMMENT
     public async Task AddComment(Post comment, string userId, string postId)
     {
-
         await _repo.AddComment(comment, userId, postId);
 
-        //invalidira se kesirana lista komentara
         var commentsCacheKey = $"comments:{postId}";
-        await _cacheService.RemoveCacheValueAsync(commentsCacheKey);
-
-        //invalidira se feed za korisnika da vidi promenu
-        var cacheKey = $"feed:{userId}";
-        await _cacheService.RemoveCacheValueAsync(cacheKey);
+        var cachedComments = await _cacheService.GetCacheValueAsync<List<PostDTO>>(commentsCacheKey);
+        if (cachedComments != null)
+        {
+            cachedComments.Add(new PostDTO
+            {
+                Content = comment.Content,
+                MediaURL = comment.MediaURL,
+                PostedBy = comment.PostedBy,
+                PostedByPic = comment.PostedByPic,
+                Timestamp = comment.Timestamp,
+                Likes = 0,
+                Liked = false
+            }); 
+            await _cacheService.SetCacheValueAsync(commentsCacheKey, cachedComments, TimeSpan.FromMinutes(5));
+        }
 
         await _cacheService.PublishAsync($"post:commented:{postId}", JsonConvert.SerializeObject(comment));
     }
@@ -140,7 +191,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
         }
 
         var comments = await _repo.GetComments(postId,userId);
-        await _cacheService.SetCacheValueAsync(cacheKey, comments, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheKey, comments, TimeSpan.FromMinutes(5));
         return comments;
     }
 
