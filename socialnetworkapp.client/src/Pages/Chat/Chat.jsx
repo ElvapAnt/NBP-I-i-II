@@ -56,12 +56,18 @@ export default function Chat() {
 
     const initWebSocket = (chatId) => {
         webSocketRef.current = new WebSocket(`ws://localhost:5114/chat?chatId=${chatId}`); // Replace with your WebSocket server endpoint
-        console.log(`WebSocket connected od strane usera : ${localStorage.getItem(CURRENT_USER)}`);
+        //console.log(`WebSocket connected od strane usera : ${localStorage.getItem(CURRENT_USER)}`);
         webSocketRef.current.onmessage = (event) => {
-            const message = JSON.parse(event.data);
+            const pseudoMessage = JSON.parse(event.data);
+            const message = {}
+            for (const prop in pseudoMessage)
+            {
+                const realProp = prop.charAt(0).toLowerCase()+prop.slice(1)
+                message[realProp]=pseudoMessage[prop]
+                }
             setChatState((prevChatState) => ({
                 ...prevChatState,
-                messages: [...prevChatState.messages, message]
+                messages: [ message,...prevChatState.messages]
             }));
             console.log(`poslao se ${message}`);
             // Add logic to handle incoming message, update state, etc.
@@ -118,7 +124,7 @@ export default function Chat() {
         if (chat.messages && chat.messages.length > 0) {
             setChatState1({
                 ...chat,
-                messages: chat.messages.map(msg => <ChatBubble message={msg} key={msg.messageId} />)
+                messages: chat.messages
             });
         } 
     };
@@ -152,9 +158,7 @@ export default function Chat() {
                 setChatState(
                     {
                         ...loaderData.currentChat,
-                        messages: loaderData.currentChat.messages.map((msg)=> {
-                            return <ChatBubble message={msg} key={msg.messageId} />
-                        })
+                        messages: loaderData.currentChat.messages
                     }
                 )    
                 }
@@ -178,7 +182,8 @@ export default function Chat() {
             <div className="chat-interface">
                    {sessionStorage.getItem(TALKING_TO)&& <div>{sessionStorage.getItem(TALKING_TO)}</div>}
                 <div className="current-chat">
-                    {chatState != undefined&&chatState.messages!=undefined && chatState.messages}
+                    {chatState != undefined && chatState.messages != undefined && chatState.messages.
+                        map(msg => <ChatBubble message={msg} key={msg.messageId} />)}
                 </div>
                 <MessageBox chatUid={chatState.chatId != undefined ? chatState.chatId : undefined}
                     onSendMessage = {handleSendMessage}/>

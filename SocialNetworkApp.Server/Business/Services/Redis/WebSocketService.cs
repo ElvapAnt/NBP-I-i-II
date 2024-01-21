@@ -13,9 +13,9 @@ namespace SocialNetworkApp.Server.Business.Services.Redis
             if (context.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                var chatId = context.Request.Query["chatId"]; // Implement this method to extract chatId from the request
+                string chatId = context.Request.Query["chatId"]!; // Implement this method to extract chatId from the request
 
-                _redisService.Subscribe($"chat:{chatId}", async (channel, value) =>
+                _redisService.Subscribe(chatId, async (channel, value) =>
                 {
                     await SendMessageToClientAsync(webSocket, value.ToString());
                 });
