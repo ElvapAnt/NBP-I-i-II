@@ -25,7 +25,7 @@ public class ChatController(ChatService service):ControllerBase
     public async Task<IActionResult> CreateChat([FromBody]ChatDTO dto)
     {
         var (name, memberIds) = dto;
-        var chat =await _service.CreateChat(name, memberIds);
+        var chat =await _service.FindOrCreateChat(memberIds[0],memberIds[1]);
         return Ok(chat.ChatId);
     }
 

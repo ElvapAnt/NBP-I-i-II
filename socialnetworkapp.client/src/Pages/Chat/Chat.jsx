@@ -145,20 +145,28 @@ export default function Chat() {
                 setInboxArray(loaderData.inboxArray.map(item => {
                     return <ChatCard
                         username={item.name != '' ? item.name :
-                            item.members.filter(it => it.username != currentUser.username)[0]}
+                            Object.values(item.members).filter(it => it.username != currentUser.username)[0].username}
                         chatUid={item.chatId}
                         chatItem={item}
                         onChatSelect={setCurrentChat}
+                        thumbnail=
+                        {item.members[Object.keys(item.members).filter(it => it != currentUser.userId)[0]].thumbnail}
                         key={item.chatId}
                     />
                 }))
             }
             if (loaderData.currentChat != undefined)
             {
+                const talkingTo = loaderData.currentChat.name != '' ?
+                    loaderData.currentChat.name : Object.values(loaderData.currentChat.members).filter(it => it.username
+                        != currentUser.username)[0].username
+                const talkingToPhotoKey = Object.keys(loaderData.currentChat.members).filter(it=>it!=currentUser.userId)[0]
                 setChatState(
                     {
                         ...loaderData.currentChat,
-                        messages: loaderData.currentChat.messages
+                        messages: loaderData.currentChat.messages,
+                        talkingTo,
+                        thumbnail:loaderData.currentChat.members[talkingToPhotoKey].thumbnail
                     }
                 )    
                 }
@@ -180,7 +188,7 @@ export default function Chat() {
                 {inboxArray}
             </div>
             <div className="chat-interface">
-                   {sessionStorage.getItem(TALKING_TO)&& <div>{sessionStorage.getItem(TALKING_TO)}</div>}
+                   {chatState.talkingTo&&<div>{chatState.talkingTo}</div>}
                 <div className="current-chat">
                     {chatState != undefined && chatState.messages != undefined && chatState.messages.
                         map(msg => <ChatBubble message={msg} key={msg.messageId} />)}

@@ -16,7 +16,7 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
         return await _repo.CreateChat(name, false, memberIds);
     }
 
-    private async Task<Chat> FindOrCreateChat(string recipientId,string senderId)
+    public async Task<Chat> FindOrCreateChat(string recipientId,string senderId)
     {
         return await _repo.FindChat(recipientId, senderId) ??
             await _repo.CreateChat("",false,recipientId,senderId);

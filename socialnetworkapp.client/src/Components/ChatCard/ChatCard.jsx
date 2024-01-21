@@ -2,7 +2,7 @@ import { Button } from '@mui/material'
 import './ChatCard.css'
 import { useNavigate } from 'react-router-dom'
 
-export default function ChatCard({ username, chatItem, onChatSelect })
+export default function ChatCard({ username, chatItem, onChatSelect,thumbnail })
 {
     const navigate = useNavigate()
 
@@ -18,6 +18,9 @@ export default function ChatCard({ username, chatItem, onChatSelect })
     return <div className="chatcard">
         <Button variant='text' id='Button'
             onClick={handleClick}>
-            {username != null ? username : 'USERNAME NOT FOUND'}</Button>
+            <img src={thumbnail} width={'50px'}
+            height={'50px'}></img>
+            {username != null ? username : 'USERNAME NOT FOUND'}
+            </Button>
     </div>
 }

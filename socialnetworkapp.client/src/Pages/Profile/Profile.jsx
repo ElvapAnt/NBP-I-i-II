@@ -1,5 +1,5 @@
-import { useLoaderData } from "react-router-dom";
-import { CURRENT_USER, notificationController, postController, userController } from "../../Constants";
+import { Navigate, useLoaderData, useNavigate } from "react-router-dom";
+import { CURRENT_USER, chatController, notificationController, postController, userController } from "../../Constants";
 import './Profile.css'
 import { Button, TextField } from "@mui/material";
 import { useState,useEffect } from "react";
@@ -42,6 +42,8 @@ export default function Profile()
     const [newUsername, setNewUsername] = useState('')
     const [newFile,setNewFile] = useState(null)
     const [postComponents, setPosts] = React.useState([])
+    let currentUser = JSON.parse(localStorage.getItem(CURRENT_USER))
+    const navigate =useNavigate()
     useEffect(() =>
     {
         setPosts(posts.map(post =>
@@ -121,7 +123,26 @@ export default function Profile()
         alert('Oh oh')
         return
     }
-    let currentUser = JSON.parse(localStorage.getItem(CURRENT_USER))
+
+    async function handleSendMessage()
+    {
+        
+        const res= await fetch(chatController + `/CreateChat`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(
+                    {
+                        memberIds:[currentUser.userId,userId]
+                    }
+                )
+            })
+        if (res.ok)
+        {
+            navigate('/Chat/'+await res.text())
+            }
+    }
+    
     const enabled = currentUser.username===username
     return <div className='profile-and-posts-container'>
             <div className="profile-container">
@@ -149,7 +170,8 @@ export default function Profile()
             </div> :
                 <div>
                     {!isFriend ? <Button enabled={!recievedRequest&&!sentRequest} onClick={ev => handleRequest()}>{
-                    recievedRequest?"Request pending your approval.":sentRequest?"Request already sent.":"Send request."}</Button> : "Already friends with user"}
+                        recievedRequest ? "Request pending your approval." : sentRequest ? "Request already sent." : "Send request."}</Button> : "Already friends with user"}
+                    <Button onClick={(ev)=>handleSendMessage()}>Send message.</Button>
                 </div>}
             
         </div>
