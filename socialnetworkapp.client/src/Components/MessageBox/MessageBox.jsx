@@ -1,8 +1,6 @@
 import SendSharpIcon from '@mui/icons-material/SendSharp';
 import { useState } from 'react';
 import './MessageBox.css'
-import { CURRENT_USER,  chatController } from '../../Constants'
-import { useNavigate } from 'react-router-dom'
 import { Button} from '@mui/material';
 
 

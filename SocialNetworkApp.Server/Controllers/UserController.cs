@@ -18,13 +18,13 @@ public class UserController(UserService service, ICacheService cacheService) : C
         var res = await _service.LogIn(username, password);
         if (res!=null)
         {
-            var sessionToken = $"{res.UserId}:{res.Password}";
+            var sessionToken = "token:" + Guid.NewGuid().ToString();
             if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<User>(sessionToken) == null)
             {
-                await _cacheService.SetCacheValueAsync(sessionToken, res, TimeSpan.FromMinutes(15));
+                await _cacheService.SetCacheValueAsync<bool>(sessionToken, true, TimeSpan.FromHours(1));
             }
 
-            var cookieOptions = new CookieOptions
+/*             var cookieOptions = new CookieOptions
             {
                 HttpOnly = false,
                 SameSite = SameSiteMode.None,
@@ -34,7 +34,7 @@ public class UserController(UserService service, ICacheService cacheService) : C
             };
             Response.Cookies.Append("SessionToken", sessionToken, cookieOptions);
 
-            res.Password = "";
+            res.Password = ""; */
             return Ok(Tuple.Create<User, string>(res, sessionToken));
         }
         else

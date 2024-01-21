@@ -3,9 +3,9 @@ import { CURRENT_USER } from '../../Constants'
 
 export default function ChatBubble({message})
 {
-    const direction = message.recipient === JSON.parse(localStorage.getItem(CURRENT_USER)).username
-   /* const file = message.file*/
-    return <div className="chatbubble-container"
+    const user = JSON.parse(localStorage.getItem(CURRENT_USER))
+    const direction = message.senderId !== user.userId
+        return <div className="chatbubble-container"
         style={{
         flexDirection:direction?'row':'row-reverse'
     }}>

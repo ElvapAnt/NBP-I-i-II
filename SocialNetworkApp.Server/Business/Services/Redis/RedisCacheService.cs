@@ -13,13 +13,13 @@ namespace SocialNetworkApp.Server.Business.Services.Redis
             _redis = redis;
         }
 
-        public async Task<T?> GetCacheValueAsync<T>(string key) where T : class
+        public async Task<T?> GetCacheValueAsync<T>(string key) 
         {
             var db = _redis.GetDatabase();
             var value = await db.StringGetAsync(key);
-            return value.IsNullOrEmpty ? null : JsonConvert.DeserializeObject<T>(value);
+            return value.IsNullOrEmpty ? default(T) : JsonConvert.DeserializeObject<T>(value);
         }
-        public async Task SetCacheValueAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
+        public async Task SetCacheValueAsync<T>(string key, T value, TimeSpan? expiry = null) 
         {
             var db = _redis.GetDatabase();
             var serializedValue = JsonConvert.SerializeObject(value);
