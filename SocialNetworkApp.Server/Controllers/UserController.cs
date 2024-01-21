@@ -55,7 +55,7 @@ public class UserController(UserService service, ICacheService cacheService) : C
     {
         //var sessionToken = Request.Cookies["SessionToken"];
 
-        if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<User>(sessionToken) == null)
+        if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<bool?>(sessionToken) == null)
         {
             return Unauthorized("No active session found. Please log in.");
         }
