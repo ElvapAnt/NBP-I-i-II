@@ -17,9 +17,10 @@ public class NotificationService(NotificationRepo repo, ICacheService cacheServi
 
 
         var cacheKey = $"notifications:received:{toId}";
-        await _cacheService.RemoveCacheValueAsync(cacheKey);
+        if(_cacheService.KeyExists(cacheKey))
+            await _cacheService.AddToListHeadAsync(cacheKey, notification, TimeSpan.FromMinutes(2));
 
-        var cacheUserKey = $"{fromId}";
+       /*  var cacheUserKey = $"{fromId}";
         var cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheUserKey);
         cachedUser!.SentRequest = true;
         await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(30));
@@ -27,23 +28,24 @@ public class NotificationService(NotificationRepo repo, ICacheService cacheServi
         cacheUserKey = $"{toId}";
         cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheUserKey);
         cachedUser!.RecievedRequest = true;
-        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(30));  */
     }
 
-    public async Task DeleteRequest(string requestId)
+    public async Task DeleteRequest(string requestId,string userId)
     {
         await _repo.DeleteRequest(requestId);
+        await _cacheService.RemoveCacheValueAsync($"notifications:received:{userId}");
     }
 
     public async Task<List<Notification>> GetReceivedRequests(string userId,int count,int skip)
     {
         var cacheKey = $"notifications:received:{userId}";
-        var cachedNotifications = await _cacheService.GetCacheValueAsync<List<Notification>>(cacheKey);
-        if (cachedNotifications != null)
-            return cachedNotifications;
+        var cachedNotifications = await _cacheService.GetListAsync<Notification>(cacheKey);
+        if (cachedNotifications != null && cachedNotifications.Any())
+            return cachedNotifications.ToList();
 
         var notifications = await _repo.GetReceivedRequests(userId, count, skip);
-        await _cacheService.SetCacheValueAsync(cacheKey, notifications, TimeSpan.FromMinutes(2));
+        await _cacheService.AddToListFrom(cacheKey, notifications, TimeSpan.FromMinutes(2));
         return notifications;
     }
 }

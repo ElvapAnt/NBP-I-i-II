@@ -91,7 +91,7 @@ public class UserRepo(IDriver driver)
     {
         using var session = _driver.AsyncSession();
         string query = "MATCH (u:User{UserId:$userId})-[:SENT]->(n:Notification) WITH u,n " +
-        "SET n.From = u.Username";
+        "SET n.From = u.Username set n.Thumbnail = u.Thumbnail";
         var parameters = new { userId };
         await session.RunAsync(query, parameters);
     }

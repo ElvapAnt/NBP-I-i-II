@@ -21,6 +21,8 @@ import PostLikes from './Pages/PostLikes/PostLikes';
 import { PostLikesLoader } from './Pages/PostLikes/PostLikes';
 import PostComments, { PostCommentsLoader } from './Pages/PostComments/PostComments';
 import Search, { SearchLoader } from './Pages/Search/Search';
+import Notifications, { NotificationsLoader } from './Pages/Notifications';
+import Friends, { FriendsLoader } from './Pages/Friends';
 const root = ReactDOM.createRoot(document.getElementById('root'))
 const router = createBrowserRouter([
   {
@@ -33,14 +35,22 @@ const router = createBrowserRouter([
     {
       path: '/login',
       element:<Login/>
-    },
+      },
+      {
+        path: '/home',
+        element: <Home />,
+        loader:HomeLoader
+      },
+      {
+        path:'/friends',element:<Friends/>,loader:FriendsLoader
+      },
     {
       path: '/chat/:chatId?',
       element: <Chat />,
       loader:ChatLoader
       },
       {
-        path: '/home',
+        path: '/',
         element: <Home />,
         loader:HomeLoader
       },
@@ -67,6 +77,11 @@ const router = createBrowserRouter([
         path: '/search/:usernamePattern',
         element: <Search />,
         loader: SearchLoader
+      },
+      {
+        path: '/notifications',
+        element: <Notifications />,
+        loader: NotificationsLoader
     }]
   }
   

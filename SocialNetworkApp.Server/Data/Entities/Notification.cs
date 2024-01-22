@@ -9,5 +9,6 @@ public class Notification
     public bool Viewed { get; set; } = false;
 
     public string From { get; set; } = "";
+    public string Thumbnail { get; set; } = "";
 
 }

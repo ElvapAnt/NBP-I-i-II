@@ -28,6 +28,9 @@ export function Navbar({ children }) {
     {
         currentUser=JSON.parse(currentUser)
     }
+    else
+    {
+        }
     
     return <div id="root">
         {enabled && <nav className="navbar">
@@ -98,6 +101,19 @@ export function Navbar({ children }) {
                         }
                     }>
                         Add post
+                    </Button>
+                </li>
+                <li>
+                    <Button variant="text" sx={{
+                        color: "white",
+                        marginRight: "10px",
+                        height: "70px"
+                    }} onClick={
+                        (event) => {
+                            navigate('/friends')
+                        }
+                    }>
+                        Friends
                     </Button>
                 </li>
                 <li>

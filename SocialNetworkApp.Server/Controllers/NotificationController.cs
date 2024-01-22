@@ -27,10 +27,10 @@ public class NotificationController(NotificationService service):ControllerBase
     }
 
     [HttpDelete]
-    [Route("DeleteRequest/{requestId}")]
-    public async Task<IActionResult> DeleteRequest([FromRoute]string requestId)
+    [Route("DeleteRequest/{requestId}/{userId}")]
+    public async Task<IActionResult> DeleteRequest([FromRoute]string requestId,[FromRoute]string userId)
     {
-        await _service.DeleteRequest(requestId);
+        await _service.DeleteRequest(requestId,userId);
         return Ok("Request deleted.");
     }
 }

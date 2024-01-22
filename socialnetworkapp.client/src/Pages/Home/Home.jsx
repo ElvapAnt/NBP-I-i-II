@@ -1,8 +1,9 @@
 import { useEffect } from "react"
 import { useLoaderData } from "react-router-dom"
 import Post from "../../Components/Post/Post"
+import LikeCard from '../../Components/LikeCard/LikeCard'
 import './Home.css'
-import { CURRENT_USER, postController } from "../../Constants"
+import { CURRENT_USER, postController, userController } from "../../Constants"
 import React from "react"
 
 export async function HomeLoader({params})
@@ -11,24 +12,39 @@ export async function HomeLoader({params})
     const response = await fetch(postController + `/GetFeed/${current_user.userId}`)
     if (response.ok)
     {
-        return await response.json()
+        let arr = await response.json()
+        let type='feed'
+        if (arr.length == 0)
+        {
+            const response = await fetch(userController + `/GetRecommendedFriends/${current_user.userId}`)
+            if (response.ok)
+            {
+                arr = await response.json()
+                type='recommended'
+            }
+        }
+        return {type,array:arr} 
     }
     return []
 }
 
 export default function Home()
 {
-    const posts = useLoaderData() 
-    const [postComponents, setPosts] = React.useState([])
-    useEffect(() =>
-    {
-        setPosts(posts.map(post =>
-        {
-            return <Post props={post} />
+    const { type, array:data } = useLoaderData(); 
+    const [dataState, setDataState] = React.useState([])
+    useEffect(() => {
+        if (data.length > 0) {
+            setDataState(data.map(item => {
+                if (type == 'feed')
+                    return <Post props={item} />
+                return <LikeCard props={item} />
             }))
         }
-        , [posts])
+        else setDataState([])
+    }
+        , [data])
     return <div className="home-container">
-        {postComponents}
+        {dataState}
+       
     </div>
 }

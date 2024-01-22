@@ -3,6 +3,7 @@ import "./Post.css"
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import InsertCommentIcon from '@mui/icons-material/InsertComment';
+import DeleteIcon from '@mui/icons-material/Delete'
 import { useState } from "react";
 import { CURRENT_USER, postController } from "../../Constants";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +43,20 @@ export default function Post({ props })
         navigate('/post/'+postState.postId+'/comments')
     }
 
+    async function handleDelete(ev)
+    {
+        const request = await fetch(postController + `/DeletePost/${props.postId}`,
+            {
+            method:"DELETE"
+        })
+        if (request.ok)
+        {
+            location.reload()
+            return
+        }
+        alert('uh oh')
+    }
+
     return (!isComment?<div className="post_container">
         <div className="post_user">
         <img className="thumbnail" src={postState.postedByPic}></img>
@@ -53,6 +68,7 @@ export default function Post({ props })
             <Button onClick={handleLike}>{postState.liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}</Button>
             <Button onClick={displayLikes}>{postState.likes} Like{postState.likes != 1?'s':''}</Button>
             <Button onClick={displayComments}><InsertCommentIcon /></Button>
+            <Button onClick={handleDelete}><DeleteIcon/></Button>
         </div>
        
         {postState.content}
@@ -69,6 +85,7 @@ export default function Post({ props })
                 <Button onClick={handleLike}>{postState.liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}</Button>
                 <Button onClick={displayLikes}>{postState.likes} Like{postState.likes != 1?'s':''}</Button>
                 <Button onClick={displayComments}><InsertCommentIcon /></Button>
+                <Button onClick={handleDelete}><DeleteIcon/></Button>
         </div>
         </div>
     )

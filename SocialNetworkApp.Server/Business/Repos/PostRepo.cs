@@ -8,16 +8,17 @@ public class PostRepo(IDriver driver)
 {
     private IDriver _driver = driver;
 
-    public async Task AddPost(Post post,string userId)
+    public async Task<string> AddPost(Post post,string userId)
     {
         post.PostId = "post:"+Guid.NewGuid().ToString();
         post.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         using var session = _driver.AsyncSession();
         string query = "CREATE (p:Post $post) WITH p "+
-        "MATCH (u:User{UserId:$userId}) MERGE (u)-[:POSTED]->(p) SET p.PostedBy=u.Username SET p.PostedByPic=u.Thumbnail "+
-        "RETURN u";
+        "MATCH (u:User{UserId:$userId}) MERGE (u)-[:POSTED]->(p) SET p.PostedBy=u.Username SET p.PostedByPic=u.Thumbnail SET p.PostedById=u.UserId"+
+        " RETURN u";
         var parameters = new { post ,userId};
         await session.RunAsync(query, parameters);
+        return post.PostId;
     }
 
     public async Task<List<PostDTO>> GetPosts(string userId,int count, int skip,string currentUserId)
@@ -29,6 +30,23 @@ public class PostRepo(IDriver driver)
         var result = await session.RunAsync(query, parameters);
         var list = await result.ToListAsync();
         return RecordMapper.ToPostList(list, "p");
+    }
+
+    /// <summary>
+    /// DO NOT CALL IF NOT SURE IF POST WITH POSTID EXISTS
+    /// </summary>
+    /// <param name="postId"></param>
+    /// <param name="currentUserId"></param>
+    /// <returns></returns>
+    public async Task<PostDTO> GetPost(string postId,string currentUserId)
+    {
+        using var session = _driver.AsyncSession();
+        string query = "MATCH (post:Post{PostId:$postId}), (u:User{UserId:$currentUserId}) " +
+        "RETURN post {.*,Liked: EXISTS ((u)-[:LIKES]->(post))}";
+        var parameters = new { postId, currentUserId };
+        var result = await session.RunAsync(query,parameters);
+        await result.FetchAsync();
+        return RecordMapper.ToPost(result.Current, "post");
     }
 
     public async Task DeletePost(string postId)
@@ -51,7 +69,7 @@ public class PostRepo(IDriver driver)
         return RecordMapper.ToPostList(list!, "p");
     }
 
-    public async Task LikePost(string userId,string postId)
+    public async Task<bool>LikePost(string userId,string postId)
     {
         
         using var session = _driver.AsyncSession();
@@ -67,6 +85,7 @@ public class PostRepo(IDriver driver)
         (!value ? "MERGE (u)-[:LIKES]->(p)":"MATCH (u)-[l:LIKES]->(p) DELETE l")+" SET p.Likes = p.Likes + $step";
         var parameters = new { userId, postId, step };
         await session.RunAsync(query, parameters);
+        return !value;
 
     }
 

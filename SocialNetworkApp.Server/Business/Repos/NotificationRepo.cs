@@ -15,8 +15,9 @@ public class NotificationRepo(IDriver driver)
         notification.NotificationId = "request:" + Guid.NewGuid().ToString();
         notification.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         string query = "CREATE (n:Notification:Request $notification) WITH n " +
-        "MATCH (userFrom:User{UserId:$fromId}),(userTo:User{UserId:$toId}) CREATE " +
-        "(userFrom)-[:SENT]->(n) CREATE (userTo)-[:RECIEVED]->(n) SET n.From=userFrom.Username";
+        "MATCH (userFrom:User{UserId:$fromId}),(userTo:User{UserId:$toId}) MERGE " +
+        "(userFrom)-[:SENT]->(n)<-[:RECIEVED]-(userTo) SET n.From=userFrom.Username SET n.Thumbnail=userFrom.Thumbnail "+
+        "SET n.URL = userFrom.userId";
         var parameters = new { notification, fromId, toId };
         await session.RunAsync(query, parameters);
     }
@@ -32,7 +33,6 @@ public class NotificationRepo(IDriver driver)
     public async Task<List<Notification>> GetReceivedRequests(string userId,int count,int skip)
     {
         using var session = _driver.AsyncSession();
-        //MATCH (u:User{UserId:"user:c804356f-5b3f-4877-ac21-4a1002e75207"})-[:RECIEVED]->(r:Request) SET r.Viewed=true RETURN r ORDER BY r.Timestmap DESC, r.NotificationId DESC SKIP 0 LIMIT 1000
         string query = "MATCH (user:User{UserId:$userId})-[:RECIEVED]->(r:Request) SET r.Viewed=true RETURN r ORDER BY r.Timestamp DESC, "+
         "r.NotificationId DESC " +
         "SKIP $skip LIMIT $count";

@@ -102,6 +102,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _repo.UpdateUser(user);
         await _repo.UpdateUsersPosts(userId);
         await _repo.UpdateUsersChats(userId);
+        await _repo.UpdateUsersNotifications(userId);
 
          await _cacheService.RemoveCacheValueAsync($"user:{userId}");
 
@@ -112,7 +113,7 @@ public class UserService(UserRepo repo, ICacheService cacheService)
     }
 
 
-    public async Task<List<UserDTO>> GetFriends(string userId,int count,int skip)
+    public async Task<List<UserDTO>> GetFriends(string userId,int count=0x7FFFFFFF,int skip=0)
     {
         var cacheKey= $"{userId}:friends";
         var cachedFriends = await _cacheService.GetCacheValueAsync<List<UserDTO>>(cacheKey);

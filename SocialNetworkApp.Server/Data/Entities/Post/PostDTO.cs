@@ -15,4 +15,5 @@ public class PostDTO
     public string PostedByPic { get; set; } = String.Empty;
 
     public bool Liked{ get; set; }
+    public string PostedById { get; set; } = String.Empty;
 }

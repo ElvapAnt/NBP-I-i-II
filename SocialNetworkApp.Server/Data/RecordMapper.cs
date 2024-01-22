@@ -61,7 +61,8 @@ public static class RecordMapper
             Content = node["Content"].As<string>(),
             MediaURL=node["MediaURL"].As<string>(),
             PostedByPic=node["PostedByPic"].As<string>(),
-            Liked=node["Liked"].As<bool>()
+            Liked=node["Liked"].As<bool>(),
+            PostedById=node["PostedById"].As<string>()
         };
     }
 
@@ -130,7 +131,9 @@ public static class RecordMapper
             Viewed=node["Viewed"].As<bool>(),
             From=node["From"].As<string>(),
             URL=node["URL"].As<string>(),
-            Content =node["Content"].As<string>()
+            Content =node["Content"].As<string>(),
+            Thumbnail=node["Thumbnail"].As<string>()
+            
         };
     }
 

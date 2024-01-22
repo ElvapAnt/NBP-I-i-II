@@ -33,8 +33,8 @@ public class UserController(UserService service, ICacheService cacheService) : C
 
             };
             Response.Cookies.Append("SessionToken", sessionToken, cookieOptions);
-
-            res.Password = ""; */
+*/
+            res.Password = ""; 
             return Ok(Tuple.Create<User, string>(res, sessionToken));
         }
         else
