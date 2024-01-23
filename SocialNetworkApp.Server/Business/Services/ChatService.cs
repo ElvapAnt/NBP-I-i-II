@@ -24,10 +24,12 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
             chat = await _repo.CreateChat("",false,recipientId,senderId);
 
             string inboxCacheKey = $"{senderId}:inbox";
-            await _cacheService.AddToListHeadAsync(inboxCacheKey,chat,TimeSpan.FromMinutes(2));
+            if(_cacheService.KeyExists(inboxCacheKey))
+                await _cacheService.AddToListHeadAsync(inboxCacheKey,chat,TimeSpan.FromMinutes(2));
 
             inboxCacheKey = $"{recipientId}:inbox";
-            await _cacheService.AddToListHeadAsync(inboxCacheKey, chat,TimeSpan.FromMinutes(2));
+            if(_cacheService.KeyExists(inboxCacheKey))
+                await _cacheService.AddToListHeadAsync(inboxCacheKey, chat,TimeSpan.FromMinutes(2));
             return Tuple.Create(chat, true);
         }
         return Tuple.Create(chat, false);
