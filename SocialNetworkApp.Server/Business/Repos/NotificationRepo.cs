@@ -17,7 +17,7 @@ public class NotificationRepo(IDriver driver)
         string query = "CREATE (n:Notification:Request $notification) WITH n " +
         "MATCH (userFrom:User{UserId:$fromId}),(userTo:User{UserId:$toId}) MERGE " +
         "(userFrom)-[:SENT]->(n)<-[:RECIEVED]-(userTo) SET n.From=userFrom.Username SET n.Thumbnail=userFrom.Thumbnail "+
-        "SET n.URL = userFrom.userId";
+        "SET n.URL = userFrom.UserId";
         var parameters = new { notification, fromId, toId };
         await session.RunAsync(query, parameters);
     }

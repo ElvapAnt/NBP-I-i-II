@@ -5,10 +5,10 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import InsertCommentIcon from '@mui/icons-material/InsertComment';
 import DeleteIcon from '@mui/icons-material/Delete'
 import { useState } from "react";
-import { CURRENT_USER, postController } from "../../Constants";
-import { useNavigate } from "react-router-dom";
+import { CURRENT_USER, postController, userController } from "../../Constants";
+import { useNavigate,Link } from "react-router-dom";
 
-export default function Post({ props })
+export default function Post({ props,parentPostId})
 {
     const navigate=useNavigate()
     const [postState,setPostState] = useState(props)
@@ -17,7 +17,9 @@ export default function Post({ props })
     async function handleLike(ev)
     {
         const step = postState.liked ? -1 : 1
-        const res = await fetch(postController + `/LikePost/${currentUser.userId}/${postState.postId}`, {
+        const req = postState.postId.startsWith('post:') ? postController + `/LikePost/${currentUser.userId}/${postState.postId}`
+            :postController+`/LikeComment/${currentUser.userId}/${parentPostId}/${postState.postId}`
+        const res = await fetch(req, {
             method:'PUT'
         })
         if (!res.ok)
@@ -45,7 +47,7 @@ export default function Post({ props })
 
     async function handleDelete(ev)
     {
-        const request = await fetch(postController + `/DeletePost/${props.postId}`,
+        const request = await fetch(postController + `/DeletePost/${props.postId}/${currentUser.userId}`,
             {
             method:"DELETE"
         })
@@ -60,7 +62,7 @@ export default function Post({ props })
     return (!isComment?<div className="post_container">
         <div className="post_user">
         <img className="thumbnail" src={postState.postedByPic}></img>
-            {postState.postedBy}
+            <Link to={`https://localhost:5173/profile/` + postState.postedById}>{postState.postedBy}</Link>
 
         </div>
         <img className="post_media" src={postState.mediaURL}></img>
@@ -68,7 +70,7 @@ export default function Post({ props })
             <Button onClick={handleLike}>{postState.liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}</Button>
             <Button onClick={displayLikes}>{postState.likes} Like{postState.likes != 1?'s':''}</Button>
             <Button onClick={displayComments}><InsertCommentIcon /></Button>
-            <Button onClick={handleDelete}><DeleteIcon/></Button>
+            {postState.postedById === currentUser.userId && <Button onClick={handleDelete}><DeleteIcon /></Button>}
         </div>
        
         {postState.content}
@@ -85,7 +87,7 @@ export default function Post({ props })
                 <Button onClick={handleLike}>{postState.liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}</Button>
                 <Button onClick={displayLikes}>{postState.likes} Like{postState.likes != 1?'s':''}</Button>
                 <Button onClick={displayComments}><InsertCommentIcon /></Button>
-                <Button onClick={handleDelete}><DeleteIcon/></Button>
+    
         </div>
         </div>
     )

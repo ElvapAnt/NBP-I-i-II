@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Business.Services.Redis;
@@ -26,8 +27,8 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
         {
             var postDto = await _repo.GetPost(postId, userId);
             await _cacheService.AddToListHeadAsync(cacheKey, postDto, TimeSpan.FromMinutes(2));
-            await _cacheService.RemoveCacheValueAsync($"posts:{userId}++{userId}");
         }
+        await _cacheService.RemoveCacheValueAsync($"posts:{userId}++{userId}");
         foreach (var friend in friends)
         {
             
@@ -37,8 +38,8 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
             {
                 var postDto = await _repo.GetPost(postId,friend.UserId);
                 await _cacheService.AddToListHeadAsync(cacheKey, postDto, TimeSpan.FromMinutes(2));
-                await _cacheService.RemoveCacheValueAsync(cacheKeyPosts);
             }
+            await _cacheService.RemoveCacheValueAsync(cacheKeyPosts);
         }
     }
 
@@ -60,13 +61,46 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
     }
 
 
-    public async Task DeletePost(string postId)
+    public async Task DeletePost(string postId,string userId)
     {
         await _repo.DeletePost(postId);
+        var friends = await _userService.GetFriends(userId);
+        var cacheKey = $"feed:{userId}";
+        var cacheKeyPosts = $"posts:{userId}++{userId}";
+        if(_cacheService.KeyExists(cacheKey))
+        {
+            
+            var list = await _cacheService.GetListAsync<PostDTO>(cacheKey);
+            TimeSpan? remainingTime = _cacheService.GetKeyTime(cacheKey);
+            await _cacheService.RemoveCacheValueAsync(cacheKey);
+            list = list.Where(item => item.PostId != postId);
+            await _cacheService.AddToListFrom(cacheKey, list.ToList(), remainingTime??TimeSpan.FromMinutes(2));
 
-        /* await _cacheService.RemoveCacheValueAsync($"post:{postId}");
-        await _cacheService.RemoveCacheValueAsync($"{postId}:likes");
-        await _cacheService.RemoveCacheValueAsync($"comments:{postId}"); */
+        }
+        if(_cacheService.KeyExists(cacheKeyPosts))
+        {
+            await _cacheService.RemoveCacheValueAsync(cacheKeyPosts);
+        }
+        foreach (var friend in friends)
+        {
+            
+            cacheKey = $"feed:{friend.UserId}";
+            cacheKeyPosts = $"posts:{userId}++{friend.UserId}";
+            if(_cacheService.KeyExists(cacheKey))
+            {
+                var list = await _cacheService.GetListAsync<PostDTO>(cacheKey);
+                TimeSpan? remainingTime = _cacheService.GetKeyTime(cacheKey);
+                await _cacheService.RemoveCacheValueAsync(cacheKey);
+                list = list.Where(item => item.PostId != postId);
+                await _cacheService.AddToListFrom(cacheKey, list.ToList(), remainingTime??TimeSpan.FromMinutes(2));
+            }
+            if(_cacheService.KeyExists(cacheKeyPosts))
+            {
+                await _cacheService.RemoveCacheValueAsync(cacheKeyPosts);
+            }
+        }
+        
+
     }
 
     public async Task<List<PostDTO>> GetFeed(string userId, int count)
@@ -84,7 +118,7 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task LikePost(string userId, string postId)
     {
-        bool state = await _repo.LikePost(userId, postId);
+        var (state,user)= await _repo.LikePost(userId, postId);
         var postDto = await _repo.GetPost(postId, userId);
         var cacheKey = $"feed:{userId}";
         var cachedFeed = await _cacheService.GetListAsync<PostDTO>(cacheKey);
@@ -110,48 +144,83 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
             }).ToList();
             await _cacheService.SetCacheValueAsync(cacheKeyPosts, cachePosts.ToList(), TimeSpan.FromMinutes(2));
         }
-     
+        var cacheKeyLikes = $"{postId}:likes";
+        if(state && _cacheService.KeyExists(cacheKeyLikes))
+        {
+            await _cacheService.AddToListHeadAsync(cacheKeyLikes,user,TimeSpan.FromMinutes(2));
+        }
+        else if(!state && _cacheService.KeyExists(cacheKeyLikes))
+        {
+            var list = await _cacheService.GetListAsync<UserDTO>(cacheKeyLikes);
+            list = list.Where(item => item.UserId != userId);
+            await _cacheService.RemoveCacheValueAsync(cacheKeyLikes);
+            await _cacheService.AddToListFrom(cacheKeyLikes,list.ToList(),TimeSpan.FromMinutes(2));
+        }
         await _cacheService.RemoveCacheValueAsync(cacheKey);
         await _cacheService.AddToListFrom(cacheKey,cachedFeed.ToList(),TimeSpan.FromMinutes(2));
-
-
+    
     }
 
+    public async Task LikeComment(string commentId,string userId,string postId)
+    {
+        var (state,user) =await _repo.LikePost(userId, commentId);
+        var cacheKey = $"comments:{postId}++{userId}";
+        var cacheKeyLikes = $"{commentId}:likes";
+        var cachedComments = await _cacheService.GetListAsync<PostDTO>(cacheKey);
+        cachedComments = cachedComments.Select<PostDTO,PostDTO>(c =>
+        {
+            if (c.PostId == commentId)
+            {
+                c.Liked = state;
+                c.Likes += state ? 1 : -1;
+            }
+            return c;
+
+        });
+         if(state && _cacheService.KeyExists(cacheKeyLikes))
+        {
+            await _cacheService.AddToListHeadAsync(cacheKeyLikes,user,TimeSpan.FromMinutes(2));
+        }
+        else if(!state && _cacheService.KeyExists(cacheKeyLikes))
+        {
+            var list = await _cacheService.GetListAsync<UserDTO>(cacheKeyLikes);
+            list = list.Where(item => item.UserId != userId);
+            await _cacheService.RemoveCacheValueAsync(cacheKeyLikes);
+            await _cacheService.AddToListFrom(cacheKeyLikes,list.ToList(),TimeSpan.FromMinutes(2));
+        }
+        await _cacheService.RemoveCacheValueAsync(cacheKey);
+        await _cacheService.AddToListFrom(cacheKey,cachedComments.ToList(),TimeSpan.FromMinutes(2));
+    }
+
+    public async Task DeleteComment(string commentId,string userId,string postId)
+    {
+
+        await _repo.DeletePost(commentId);
+    }
+    
     public async Task<List<UserDTO>> GetLikes(string postId,string userId)
     {
-        //kesira sve ljude koji su lajkovali do sad
-/*         var cacheKey = $"{postId}:likes";
-        
-        var cachedLikes = await _cacheService.GetCacheValueAsync<List<UserDTO>>(cacheKey);
-        if (cachedLikes != null)
+       
+        var cacheKey = $"{postId}:likes";
+        var cachedLikes = await _cacheService.GetListAsync<UserDTO>(cacheKey);
+        if (cachedLikes != null && cachedLikes.Any())
         {
-            return cachedLikes;
-        } */
+            return cachedLikes.ToList();
+        } 
 
         var likes = await _repo.GetLikes(postId,userId);
-/*         await _cacheService.SetCacheValueAsync(cacheKey, likes, TimeSpan.FromMinutes(10)); */
+        await _cacheService.AddToListFrom(cacheKey, likes, TimeSpan.FromMinutes(2));
         return likes;
     }
     //COMMENT
     public async Task AddComment(Post comment, string userId, string postId)
     {
-        await _repo.AddComment(comment, userId, postId);
+        var commentDTO=await _repo.AddComment(comment, userId, postId);
 
-        var commentsCacheKey = $"comments:{postId}";
-        var cachedComments = await _cacheService.GetCacheValueAsync<List<PostDTO>>(commentsCacheKey);
-        if (cachedComments != null)
+        var commentsCacheKey = $"comments:{postId}++{userId}";
+        if (_cacheService.KeyExists(commentsCacheKey))
         {
-            cachedComments.Add(new PostDTO
-            {
-                Content = comment.Content,
-                MediaURL = comment.MediaURL,
-                PostedBy = comment.PostedBy,
-                PostedByPic = comment.PostedByPic,
-                Timestamp = comment.Timestamp,
-                Likes = 0,
-                Liked = false
-            }); 
-            await _cacheService.SetCacheValueAsync(commentsCacheKey, cachedComments, TimeSpan.FromMinutes(5));
+            await _cacheService.AddToListHeadAsync(commentsCacheKey, commentDTO, TimeSpan.FromMinutes(5));
         }
 
         await _cacheService.PublishAsync($"post:commented:{postId}", JsonConvert.SerializeObject(comment));
@@ -159,15 +228,15 @@ public class PostService(PostRepo repo, ICacheService cacheService, UserService 
 
     public async Task<List<PostDTO>> GetComments(string postId,string userId)
     {
-        var cacheKey = $"comments:{postId}";
-        var cachedComments = await _cacheService.GetCacheValueAsync<List<PostDTO>>(cacheKey);
-        if (cachedComments != null)
+        var cacheKey = $"comments:{postId}++{userId}";
+        var cachedComments = await _cacheService.GetListAsync<PostDTO>(cacheKey);
+        if (cachedComments != null && cachedComments.Any())
         {
-            return cachedComments;
+            return cachedComments.ToList();
         }
 
         var comments = await _repo.GetComments(postId,userId);
-        await _cacheService.SetCacheValueAsync(cacheKey, comments, TimeSpan.FromMinutes(5));
+        await _cacheService.AddToListFrom(cacheKey, comments, TimeSpan.FromMinutes(5));
         return comments;
     }
 

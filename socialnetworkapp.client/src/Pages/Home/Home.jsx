@@ -36,8 +36,8 @@ export default function Home()
         if (data.length > 0) {
             setDataState(data.map(item => {
                 if (type == 'feed')
-                    return <Post props={item} />
-                return <LikeCard props={item} />
+                    return <Post props={item} key={item.postId} />
+                return <LikeCard props={item} key={item.userId} />
             }))
         }
         else setDataState([])

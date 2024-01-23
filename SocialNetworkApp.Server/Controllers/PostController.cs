@@ -25,10 +25,10 @@ public class PostController(PostService service):ControllerBase
         return Ok("Posted succesfully.");
     }
 
-    [HttpDelete("DeletePost/{postId}")]
-    public async Task<IActionResult> DeletePost([FromRoute]string postId)
+    [HttpDelete("DeletePost/{postId}/{userId}")]
+    public async Task<IActionResult> DeletePost([FromRoute]string postId,[FromRoute]string userId)
     {
-        await _service.DeletePost(postId);
+        await _service.DeletePost(postId,userId);
         return Ok("Post deleted.");
     }
 
@@ -37,6 +37,13 @@ public class PostController(PostService service):ControllerBase
     {
         await _service.LikePost(userId, postId);
         return Ok("Like/Unlike submitted.");
+    }
+
+    [HttpPut("LikeComment/{userId}/{postId}/{commentId}")]
+    public async Task<IActionResult> LikeComment(string userId,string postId,string commentId)
+    {
+        await _service.LikeComment(commentId, userId, postId);
+        return Ok("Like/Unlike submitted");
     }
 
     [HttpGet("GetFeed/{userId}")]

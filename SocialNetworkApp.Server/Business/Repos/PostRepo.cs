@@ -1,4 +1,5 @@
 using Neo4j.Driver;
+using NRedisStack.Graph;
 using SocialNetworkApp.Server.Data;
 using SocialNetworkApp.Server.Data.Entities;
 
@@ -46,7 +47,8 @@ public class PostRepo(IDriver driver)
         var parameters = new { postId, currentUserId };
         var result = await session.RunAsync(query,parameters);
         await result.FetchAsync();
-        return RecordMapper.ToPost(result.Current, "post");
+        var record = result.Current;
+        return RecordMapper.ToPost(record, "post");
     }
 
     public async Task DeletePost(string postId)
@@ -69,7 +71,7 @@ public class PostRepo(IDriver driver)
         return RecordMapper.ToPostList(list!, "p");
     }
 
-    public async Task<bool>LikePost(string userId,string postId)
+    public async Task<Tuple<bool,UserDTO>>LikePost(string userId,string postId)
     {
         
         using var session = _driver.AsyncSession();
@@ -82,10 +84,13 @@ public class PostRepo(IDriver driver)
 
         int step = !value ? 1 : -1;
         string query = "MATCH (u:User{UserId:$userId}), (p:Post{PostId:$postId}) WITH p,u " +
-        (!value ? "MERGE (u)-[:LIKES]->(p)":"MATCH (u)-[l:LIKES]->(p) DELETE l")+" SET p.Likes = p.Likes + $step";
+        (!value ? "MERGE (u)-[:LIKES]->(p)":"MATCH (u)-[l:LIKES]->(p) DELETE l")+" SET p.Likes = p.Likes + $step "+
+        "RETURN u {.*, IsFriend:false,SentRequest:false,RecievedRequest:false}";
         var parameters = new { userId, postId, step };
-        await session.RunAsync(query, parameters);
-        return !value;
+        var res =await session.RunAsync(query, parameters);
+        await res.FetchAsync();
+        var userDTO = RecordMapper.ToUserDTO(res.Current, "u");
+        return Tuple.Create(!value,userDTO);
 
     }
 
@@ -105,16 +110,19 @@ public class PostRepo(IDriver driver)
         return RecordMapper.ToUserList(list, "u");
     }
 
-    public async Task AddComment(Post comment, string userId,string postId)
+    public async Task<PostDTO> AddComment(Post comment, string userId,string postId)
     {
         comment.PostId = "comment:"+Guid.NewGuid().ToString();
         comment.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         using var session = _driver.AsyncSession();
         string query = "CREATE (c:Comment:Post $comment) WITH c MATCH "+
         "(u:User{UserId:$userId}), (p:Post{PostId:$postId}), (c:Comment{PostId:$commentId}) CREATE (u)-[:POSTED]->(c) "+
-        "CREATE (p)-[:HAS_COMMENT]->(c) SET c.PostedByPic=u.Thumbnail SET c.PostedBy = u.Username";
+        "CREATE (p)-[:HAS_COMMENT]->(c) SET c.PostedByPic=u.Thumbnail SET c.PostedBy = u.Username SET c.PostedById=u.UserId "+
+        "RETURN c {.*, Liked: EXISTS((u)-[:LIKES]->(c))}";
         var parameters = new { comment,userId, postId,commentId = comment.PostId };
-        await session.RunAsync(query, parameters);
+        var res=await session.RunAsync(query, parameters);
+        await res.FetchAsync();
+        return RecordMapper.ToPost(res.Current, "c");
     }
 
     public async Task<List<PostDTO>> GetComments(string postId,string userId)

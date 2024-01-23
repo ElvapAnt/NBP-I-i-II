@@ -16,28 +16,39 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
         return await _repo.CreateChat(name, false, memberIds);
     }
 
-    public async Task<Chat> FindOrCreateChat(string recipientId,string senderId)
+    public async Task<Tuple<Chat,bool>> FindOrCreateChat(string recipientId,string senderId)
     {
-        return await _repo.FindChat(recipientId, senderId) ??
-            await _repo.CreateChat("",false,recipientId,senderId);
+        var chat = await _repo.FindChat(recipientId, senderId);
+        if (chat==null)
+        {
+            chat = await _repo.CreateChat("",false,recipientId,senderId);
+
+            string inboxCacheKey = $"{senderId}:inbox";
+            await _cacheService.AddToListHeadAsync(inboxCacheKey,chat,TimeSpan.FromMinutes(2));
+
+            inboxCacheKey = $"{recipientId}:inbox";
+            await _cacheService.AddToListHeadAsync(inboxCacheKey, chat,TimeSpan.FromMinutes(2));
+            return Tuple.Create(chat, true);
+        }
+        return Tuple.Create(chat, false);
     }
     public async Task<Chat?> SendMesage(Message message,string recipientId)
     {
         Chat? chat = null;
         if(recipientId.StartsWith("user:"))
         {
-            chat = await FindOrCreateChat(recipientId, message.SenderId);
+            
+            var (chat2,created) = await FindOrCreateChat(recipientId, message.SenderId);
+            chat = chat2!;
             recipientId = chat.ChatId;
         }
 
-        var cacheKey = $"{recipientId}:messages";
-        await _cacheService.RemoveCacheValueAsync(cacheKey);
-       
         await _repo.AddMesage(message, recipientId);
 
         var serializedMessage = JsonConvert.SerializeObject(message);
         await _cacheService.PublishAsync($"{recipientId}", serializedMessage);
-
+        var cacheKey = $"{recipientId}:messages";
+        await _cacheService.AddToListHeadAsync(cacheKey, message,TimeSpan.FromMinutes(2));
         //mozda da procesira notifikaciju za poruku
         await _cacheService.EnqueueMessageAsync("messageQueue", serializedMessage);
 
@@ -47,48 +58,43 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
     public async Task<List<Chat>> GetInbox(string userId)
     {
         var cacheKey = $"{userId}:inbox";
-        var cachedInbox = await _cacheService.GetCacheValueAsync<List<Chat>>(cacheKey);
+        var cachedInbox = await _cacheService.GetListAsync<Chat>(cacheKey);
         
-        if(cachedInbox!=null)
-            return cachedInbox;
+        if(cachedInbox!=null && cachedInbox.Any())
+            return cachedInbox.ToList();
         
         var inbox  = await _repo.GetInbox(userId);
-        await _cacheService.SetCacheValueAsync(cacheKey, inbox, TimeSpan.FromMinutes(1));
+        await _cacheService.AddToListFrom(cacheKey, inbox, TimeSpan.FromMinutes(5));
         return inbox;
     }
 
     public async Task<List<Message>> GetMessages(string chatId)
     {
         var cacheKey = $"{chatId}:messages";
-        var cachedMessages = await _cacheService.GetCacheValueAsync<List<Message>>(cacheKey);
+        var cachedMessages = await _cacheService.GetListAsync<Message>(cacheKey);
         
-        if(cachedMessages!=null)
-            return cachedMessages;
+        if(cachedMessages!=null && cachedMessages.Any())
+            return cachedMessages.ToList();
 
         var messages = await _repo.GetMessages(chatId);
-        await _cacheService.SetCacheValueAsync(cacheKey, messages, TimeSpan.FromMinutes(30));
+        await _cacheService.AddToListFrom(cacheKey, messages, TimeSpan.FromMinutes(2));
         return messages;
     }
 
-    //za brisanje i editovanje bi trebalo da se updateuje kes 
-    //ili da se prosledi i chatID cisto da bi mogao kes da se invalidira ili edituje
     public async Task DeleteMessage(string messageId)
     {
 
-        await _repo.DeleteMessage(messageId);
+        string chatId = await _repo.DeleteMessage(messageId);
         
-       /* var cacheKey = $"chat:{chatId}:messages";
+        var cacheKey = $"{chatId}:messages";
         await _cacheService.RemoveCacheValueAsync(cacheKey);
 
-        var message = new { MessageId = messageId, Action = "delete" };
+      /*   var message = new { MessageId = messageId, Action = "delete" };
         var serializedMessage = JsonConvert.SerializeObject(message);
-        await _cacheService.PublishAsync($"chat:{chatId}", serializedMessage);*/
+        await _cacheService.PublishAsync($"chat:{chatId}", serializedMessage); */
     }
 
-    // FYI za editovanje : 
-    // If you're using a front-end framework like React,
-    // this would typically trigger a re-render of the component displaying the message,
-    // showing the updated content.
+
 
     public async Task EditMessage(string messageId,string newContent)
     {

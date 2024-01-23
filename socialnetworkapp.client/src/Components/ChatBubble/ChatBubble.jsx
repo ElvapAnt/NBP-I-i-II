@@ -29,7 +29,7 @@ export default function ChatBubble({message})
             backgroundColor: direction ? 'var(--sky)' : 'var(--soft-grey)'
         }
     }>
-            <Button onClick={handleDelete}><DeleteIcon/></Button>
+                {message.senderId === user.userId && <Button onClick={handleDelete}><DeleteIcon /></Button>}
         {message.content}
     </div>
         </div>

@@ -23,7 +23,7 @@ function loginFailed(setLoginState,msg)
 export function loginUser(signUpState,navigate)
 {
     localStorage.setItem(CURRENT_USER,JSON.stringify(signUpState))
-    navigate('/chat')
+    navigate('/home')
 }
 
 async function signup(signUpState,navigate,setLoginState)

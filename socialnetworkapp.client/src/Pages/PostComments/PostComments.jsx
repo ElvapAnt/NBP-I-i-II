@@ -12,7 +12,7 @@ export async function PostCommentsLoader({ params })
     const result = await fetch(postController + '/GetComments/' + params.postId+'/'+currentUser.userId)
     if (result.ok)
     {
-        return { array: await result.json(), commentId:params.postId }
+        return { array: await result.json(), postId:params.postId }
     }
     alert('Something went wrong')
     return []
@@ -36,7 +36,7 @@ export default function PostComments()
     async function postComment()
     {
         const user = JSON.parse(localStorage.getItem(CURRENT_USER))
-        const result = await fetch(postController + `/AddComment/${user.userId}/${data.commentId}`,
+        const result = await fetch(postController + `/AddComment/${user.userId}/${data.postId}`,
             {
                 method: 'POST', headers: {
             'Content-Type':'application/json'
@@ -55,7 +55,7 @@ export default function PostComments()
     }}>
         {dataState.map(item =>
         {
-            return <Post props={item} key={item.postId} />
+            return <Post props={item} key={item.postId} parentPostId={data.postId} />
             })}
         <div style={{
             position: 'absolute',

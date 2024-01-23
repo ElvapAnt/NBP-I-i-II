@@ -66,7 +66,7 @@ namespace SocialNetworkApp.Server.Business.Services.Redis
         {
             var db = _redis.GetDatabase();
             var serializedValue = JsonConvert.SerializeObject(value);
-            await db.ListRightPushAsync(listKey, serializedValue);
+            await db.ListLeftPushAsync(listKey, serializedValue);
             if(expiry!=null)
             {
                 db.KeyExpire(listKey, expiry);

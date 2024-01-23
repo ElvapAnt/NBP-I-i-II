@@ -118,6 +118,7 @@ export default function Profile()
                     sentRequest:true
                 }
             })
+            location.reload()
             return
         }
         alert('Oh oh')
@@ -169,8 +170,9 @@ export default function Profile()
                 <UploadImage props={{ inputId: 'change-picture', labelText: 'Change profile picture.', setState: setNewFile }} />
             </div> :
                 <div>
-                    {!isFriend ? <Button enabled={!recievedRequest&&!sentRequest} onClick={ev => handleRequest()}>{
-                        recievedRequest ? "Request pending your approval." : sentRequest ? "Request already sent." : "Send request."}</Button> : "Already friends with user"}
+                    {!isFriend ? <Button disabled={recievedRequest||sentRequest} onClick={ev => handleRequest()}>{
+                        recievedRequest ? "Request pending your approval." :
+                            sentRequest ? "Request already sent." : "Send request."}</Button> : "Already friends with user"}
                     <Button onClick={(ev)=>handleSendMessage()}>Send message.</Button>
                 </div>}
             

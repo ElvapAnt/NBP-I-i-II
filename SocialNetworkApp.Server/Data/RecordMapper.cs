@@ -28,7 +28,12 @@ public static class RecordMapper
     
     public static UserDTO ToUserDTO(IRecord record,string nodeKey="user")
     {
-        var node = record[nodeKey].As<IDictionary<string,object>>();
+        var node = record[nodeKey] as IDictionary<string, object>;
+        if(node==null)
+        {
+            var props = record[nodeKey].GetType().GetProperty("Properties");
+            node = props!.GetValue(record[nodeKey]) as IDictionary<string, object>;
+        }
         return new UserDTO()
         {
             UserId = node["UserId"].As<string>(),
@@ -51,7 +56,13 @@ public static class RecordMapper
 
     public static PostDTO ToPost(IRecord record,string nodeKey="post")
     {
-        var node = record[nodeKey].As<IDictionary<string,object>>();
+        var node = record[nodeKey] as IDictionary<string,object>;
+        if(node==null)
+        {
+            var objType=record[nodeKey].GetType();
+            var prop = objType.GetProperty("Properties");
+            node = prop!.GetValue(record[nodeKey]) as IDictionary<string, object>;
+        }
         return new PostDTO
         {
             PostId = node["PostId"].As<string>(),

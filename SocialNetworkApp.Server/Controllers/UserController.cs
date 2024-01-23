@@ -19,9 +19,9 @@ public class UserController(UserService service, ICacheService cacheService) : C
         if (res!=null)
         {
             var sessionToken = "token:" + Guid.NewGuid().ToString();
-            if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<User>(sessionToken) == null)
+            if (await _cacheService.GetCacheValueAsync<string>(sessionToken) == null)
             {
-                await _cacheService.SetCacheValueAsync<bool>(sessionToken, true, TimeSpan.FromHours(1));
+                await _cacheService.SetCacheValueAsync<string>(sessionToken, res.UserId, TimeSpan.FromHours(1));
             }
 
 /*             var cookieOptions = new CookieOptions
@@ -54,13 +54,14 @@ public class UserController(UserService service, ICacheService cacheService) : C
     public async Task<IActionResult> GetUser([FromRoute] string userId,[FromRoute]string sessionToken)
     {
         //var sessionToken = Request.Cookies["SessionToken"];
+        string? userId2 = await _cacheService.GetCacheValueAsync<string>(sessionToken);
 
-        if (string.IsNullOrEmpty(sessionToken) || await _cacheService.GetCacheValueAsync<bool?>(sessionToken) == null)
+        if (userId2==null)
         {
             return Unauthorized("No active session found. Please log in.");
         }
 
-        var user = await _service.GetUser(userId);
+        var user = await _service.GetUserDTO(userId,userId2);
         return Ok(user);
     }
 

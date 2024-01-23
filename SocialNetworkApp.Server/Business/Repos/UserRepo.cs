@@ -21,7 +21,8 @@ public class UserRepo(IDriver driver)
     public async Task<User?> GetUser(string userId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (u : User{UserId: $userId}) RETURN u";
+        string query = "MATCH (u : User{UserId: $userId})"+
+        "RETURN u";
         var parameters = new { userId };
         var result =await session.RunAsync(query, parameters);
 
@@ -31,6 +32,24 @@ public class UserRepo(IDriver driver)
             var record = result.Current;
 
             return RecordMapper.ToUser(record,"u");
+        }
+        return null;
+    }
+    public async Task<UserDTO?> GetUserDTO(string userId,string userId2)
+    {
+        using var session = _driver.AsyncSession();
+        string query = "MATCH (u : User{UserId: $userId}),(u2:User{UserId:$userId2}) "+
+        "RETURN u {.*,IsFriend: EXISTS ((u)-[:FRIENDS]->(u2)),SentRequest: EXISTS ((u2)-[:SENT]->(:Request)<-[:RECIEVED]-(u)), "+
+        "RecievedRequest: EXISTS ((u)-[:SENT]->(:Request)<-[:RECIEVED]-(u2))}";
+        var parameters = new { userId,userId2 };
+        var result =await session.RunAsync(query, parameters);
+
+        bool success = await result.FetchAsync();
+        if(success)
+        {
+            var record = result.Current;
+
+            return RecordMapper.ToUserDTO(record,"u");
         }
         return null;
     }

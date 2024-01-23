@@ -20,15 +20,16 @@ public class NotificationService(NotificationRepo repo, ICacheService cacheServi
         if(_cacheService.KeyExists(cacheKey))
             await _cacheService.AddToListHeadAsync(cacheKey, notification, TimeSpan.FromMinutes(2));
 
-       /*  var cacheUserKey = $"{fromId}";
+        var cacheUserKey = $"{toId}++{fromId}";
         var cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheUserKey);
         cachedUser!.SentRequest = true;
-        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(30));
+        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(2));
 
-        cacheUserKey = $"{toId}";
+        cacheUserKey = $"{fromId}++{toId}";
         cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheUserKey);
-        cachedUser!.RecievedRequest = true;
-        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(30));  */
+        if (cachedUser == null) return;
+        cachedUser.RecievedRequest = true;
+        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(2)); 
     }
 
     public async Task DeleteRequest(string requestId,string userId)
