@@ -1,5 +1,6 @@
 using Neo4j.Driver;
 using NetTopologySuite.Operation.Buffer;
+using NRedisStack.Graph;
 using SocialNetworkApp.Server.Data;
 using SocialNetworkApp.Server.Data.Entities;
 
@@ -9,7 +10,7 @@ public class NotificationRepo(IDriver driver)
 {
     private readonly IDriver _driver = driver;
 
-    public async Task AddRequest(Notification notification,string fromId,string toId)
+    public async Task<Notification> AddRequest(Notification notification,string fromId,string toId)
     {
         using var session = _driver.AsyncSession();
         notification.NotificationId = "request:" + Guid.NewGuid().ToString();
@@ -17,17 +18,22 @@ public class NotificationRepo(IDriver driver)
         string query = "CREATE (n:Notification:Request $notification) WITH n " +
         "MATCH (userFrom:User{UserId:$fromId}),(userTo:User{UserId:$toId}) MERGE " +
         "(userFrom)-[:SENT]->(n)<-[:RECIEVED]-(userTo) SET n.From=userFrom.Username SET n.Thumbnail=userFrom.Thumbnail "+
-        "SET n.URL = userFrom.UserId";
+        "SET n.URL = userFrom.UserId RETURN n";
         var parameters = new { notification, fromId, toId };
-        await session.RunAsync(query, parameters);
+        var res =await session.RunAsync(query, parameters);
+        await res.FetchAsync();
+        return RecordMapper.ToNotification(res.Current, "n");
     }
 
-    public async Task DeleteRequest(string requestId)
+    public async Task<Notification> DeleteRequest(string requestId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (r:Request{NotificationId:$requestId}) DETACH DELETE r";
+        string query = "MATCH (r:Request{NotificationId:$requestId}) with r, PROPERTIES(r) as request DETACH DELETE r "+
+        "RETURN request";
         var parameters = new { requestId };
-        await session.RunAsync(query, parameters);
+        var res =await session.RunAsync(query, parameters);
+        await res.FetchAsync();
+        return RecordMapper.ToNotification(res.Current, "request");
     }
 
     public async Task<List<Notification>> GetReceivedRequests(string userId,int count,int skip)

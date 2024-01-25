@@ -2,10 +2,8 @@ using SocialNetworkApp.Server.Data.Entities;
 using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Error;
 using Microsoft.AspNetCore.Identity;
-using StackExchange.Redis;
-using SocialNetworkApp.Server.Settings;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using SocialNetworkApp.Server.Business.Services.Redis;
+using Newtonsoft.Json;
 
 namespace SocialNetworkApp.Server.Business.Services;
 
@@ -31,26 +29,46 @@ public class UserService(UserRepo repo, ICacheService cacheService)
 
     public async Task<UserDTO> GetUserDTO(string userId,string userId2)
     {
-        //provera da li postoji u kesu za brze prikupljanje
-        var cacheKey = $"{userId}++{userId2}";
-        var cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheKey);
+        string userCacheKey = $"profile:{userId}";
+        var userToUserCacheKey = $"{userId}++{userId2}";
+        UserDTO userDto;
+        if(_cacheService.KeyExists(userCacheKey)&&_cacheService.KeyExists(userToUserCacheKey))
+        {
+            userDto= await _cacheService.GetHashSet<UserDTO>(userCacheKey);
+            var specificUserDto = await _cacheService.GetHashSet<UserDTO>(userToUserCacheKey);
+            userDto.IsFriend = specificUserDto.IsFriend;
+            userDto.SentRequest=specificUserDto.SentRequest;
+            userDto.RecievedRequest = specificUserDto.RecievedRequest;
+        }
+        else
+        {
+            userDto = await _repo.GetUserDTO(userId,userId2) ?? throw new CustomException("No such user exists.");
+            await _cacheService.CreateHashSetFrom<UserDTO>(userCacheKey, userDto,TimeSpan.FromMinutes(2));
+            await _cacheService.UpdateHashSet(userToUserCacheKey, [
+                new("IsFriend",JsonConvert.SerializeObject(userDto.IsFriend))
+                ,new("SentRequest",JsonConvert.SerializeObject(userDto.SentRequest))
+                ,new("RecievedRequest",JsonConvert.SerializeObject(userDto.RecievedRequest))
+            ],TimeSpan.FromMinutes(2));
+        }
+
+       /*  var cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(userToUserCacheKey);
         if(cachedUser!=null)
             return cachedUser;
         //promasaj, pa se ide u bazu
         UserDTO userDto = await _repo.GetUserDTO(userId,userId2) ?? throw new CustomException("No such user exists.");
-        await _cacheService.SetCacheValueAsync(cacheKey, userDto, TimeSpan.FromMinutes(2));
+        await _cacheService.SetCacheValueAsync(userToUserCacheKey, userDto, TimeSpan.FromMinutes(2)); */
         return userDto;
     }
 
     public async Task<User> GetUserByUsername(string username)
     {
-        var cacheKey = $"username:{username}";
+       /*  var cacheKey = $"username:{username}";
         var cachedUser = await _cacheService.GetCacheValueAsync<User>(cacheKey);
         if (cachedUser != null)
             return cachedUser;
-
+ */
         User user = await _repo.GetUserByUsername(username) ?? throw new CustomException("No such user exists.");
-        await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(60));
+     /*    await _cacheService.SetCacheValueAsync(cacheKey, user, TimeSpan.FromMinutes(60)); */
         return user;
     }
 
@@ -63,7 +81,6 @@ public class UserService(UserRepo repo, ICacheService cacheService)
     public async Task UpdateUsername(string userId,string newUsername)
     {
         User user = (await _repo.GetUser(userId))!;
-        var oldUsername = user.Username;
         user.Username = newUsername;
 
         await _repo.UpdateUser(user);
@@ -72,7 +89,9 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _repo.UpdateUsersNotifications(userId);
 
 
-        await _cacheService.SetCacheValueAsync($"{userId}++{userId}", user, TimeSpan.FromMinutes(2));
+        await _cacheService.UpdateHashSet($"profile:{userId}", [
+            new("Username",JsonConvert.SerializeObject(newUsername))
+        ],TimeSpan.FromMinutes(2));
 
     }
 
@@ -86,7 +105,10 @@ public class UserService(UserRepo repo, ICacheService cacheService)
         await _repo.UpdateUsersNotifications(userId);
 
         
-        await _cacheService.SetCacheValueAsync($"{userId}++{userId}", user, TimeSpan.FromMinutes(2));
+        //await _cacheService.SetCacheValueAsync($"{userId}++{userId}", user, TimeSpan.FromMinutes(2));
+              await _cacheService.UpdateHashSet($"profile:{userId}", [
+            new("Thumbnail",JsonConvert.SerializeObject(newThumbnail))
+        ],TimeSpan.FromMinutes(2));
     }
 
 

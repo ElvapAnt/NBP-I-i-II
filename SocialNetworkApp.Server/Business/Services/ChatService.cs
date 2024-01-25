@@ -86,10 +86,10 @@ public class ChatService(ChatRepo repo, ICacheService cacheService)
     public async Task DeleteMessage(string messageId)
     {
 
-        string chatId = await _repo.DeleteMessage(messageId);
+        var (msg,chatId) = await _repo.DeleteMessage(messageId);
         
         var cacheKey = $"{chatId}:messages";
-        await _cacheService.RemoveCacheValueAsync(cacheKey);
+        await _cacheService.RemoveFromList(cacheKey, msg);
 
       /*   var message = new { MessageId = messageId, Action = "delete" };
         var serializedMessage = JsonConvert.SerializeObject(message);

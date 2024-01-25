@@ -1,6 +1,8 @@
+using Newtonsoft.Json;
 using SocialNetworkApp.Server.Business.Repos;
 using SocialNetworkApp.Server.Business.Services.Redis;
 using SocialNetworkApp.Server.Data.Entities;
+using StackExchange.Redis;
 
 namespace SocialNetworkApp.Server.Business.Services;
 
@@ -11,31 +13,28 @@ public class NotificationService(NotificationRepo repo, ICacheService cacheServi
 
     public async Task AddRequest(Notification notification,string fromId,string toId)
     {
-        //invalidiramo kes za notifik onom kom saljemo
 
-        await _repo.AddRequest(notification, fromId, toId);
-
-
+        notification = await _repo.AddRequest(notification, fromId, toId);
         var cacheKey = $"notifications:received:{toId}";
         if(_cacheService.KeyExists(cacheKey))
             await _cacheService.AddToListHeadAsync(cacheKey, notification, TimeSpan.FromMinutes(2));
 
-        var cacheUserKey = $"{toId}++{fromId}";
-        var cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheUserKey);
-        cachedUser!.SentRequest = true;
-        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(2));
-
-        cacheUserKey = $"{fromId}++{toId}";
-        cachedUser = await _cacheService.GetCacheValueAsync<UserDTO>(cacheUserKey);
-        if (cachedUser == null) return;
-        cachedUser.RecievedRequest = true;
-        await _cacheService.SetCacheValueAsync(cacheUserKey, cachedUser, TimeSpan.FromMinutes(2)); 
+        var cacheUserToUserKey = $"{toId}++{fromId}";
+        await _cacheService.UpdateHashSet(cacheUserToUserKey,[
+            new("SentRequest","true")
+        ],TimeSpan.FromMinutes(2));
+        
+        cacheUserToUserKey = $"{fromId}++{toId}";
+        if(_cacheService.KeyExists(cacheUserToUserKey))
+        await _cacheService.UpdateHashSet(cacheUserToUserKey,[
+            new("RecievedRequest","true")
+        ],TimeSpan.FromMinutes(2));
     }
 
     public async Task DeleteRequest(string requestId,string userId)
     {
-        await _repo.DeleteRequest(requestId);
-        await _cacheService.RemoveCacheValueAsync($"notifications:received:{userId}");
+        Notification request = await _repo.DeleteRequest(requestId);
+        await _cacheService.RemoveFromList($"notifications:received:{userId}", request);
     }
 
     public async Task<List<Notification>> GetReceivedRequests(string userId,int count,int skip)

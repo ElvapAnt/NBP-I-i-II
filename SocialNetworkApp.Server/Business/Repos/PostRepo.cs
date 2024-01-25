@@ -9,17 +9,18 @@ public class PostRepo(IDriver driver)
 {
     private IDriver _driver = driver;
 
-    public async Task<string> AddPost(Post post,string userId)
+    public async Task<PostDTO> AddPost(Post post,string userId)
     {
         post.PostId = "post:"+Guid.NewGuid().ToString();
         post.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         using var session = _driver.AsyncSession();
         string query = "CREATE (p:Post $post) WITH p "+
         "MATCH (u:User{UserId:$userId}) MERGE (u)-[:POSTED]->(p) SET p.PostedBy=u.Username SET p.PostedByPic=u.Thumbnail SET p.PostedById=u.UserId"+
-        " RETURN u";
+        " RETURN p {.*,Liked:false}";
         var parameters = new { post ,userId};
-        await session.RunAsync(query, parameters);
-        return post.PostId;
+        var res =await session.RunAsync(query, parameters);
+        await res.FetchAsync();
+        return RecordMapper.ToPost(res.Current, "p")!;
     }
 
     public async Task<List<PostDTO>> GetPosts(string userId,int count, int skip,string currentUserId)
@@ -33,13 +34,8 @@ public class PostRepo(IDriver driver)
         return RecordMapper.ToPostList(list, "p");
     }
 
-    /// <summary>
-    /// DO NOT CALL IF NOT SURE IF POST WITH POSTID EXISTS
-    /// </summary>
-    /// <param name="postId"></param>
-    /// <param name="currentUserId"></param>
-    /// <returns></returns>
-    public async Task<PostDTO> GetPost(string postId,string currentUserId)
+
+    public async Task<PostDTO?> GetPost(string postId,string currentUserId)
     {
         using var session = _driver.AsyncSession();
         string query = "MATCH (post:Post{PostId:$postId}), (u:User{UserId:$currentUserId}) " +
@@ -51,12 +47,14 @@ public class PostRepo(IDriver driver)
         return RecordMapper.ToPost(record, "post");
     }
 
-    public async Task DeletePost(string postId)
+    public async Task<PostDTO> DeletePost(string postId)
     {
         using var session = _driver.AsyncSession();
-        string query = "MATCH (p:Post{PostId:$postId}) DETACH DELETE p";
+        string query = "MATCH (p:Post{PostId:$postId}) with p,properties(p) as post DETACH DELETE p RETURN post {.*,Liked:false}";
         var parameters = new { postId };
         var result = await session.RunAsync(query, parameters);
+        await result.FetchAsync();
+        return RecordMapper.ToPost(result.Current, "post")!;
     }
 
     public async Task<List<PostDTO>> GetFeed(string userId,int count)
@@ -89,7 +87,7 @@ public class PostRepo(IDriver driver)
         var parameters = new { userId, postId, step };
         var res =await session.RunAsync(query, parameters);
         await res.FetchAsync();
-        var userDTO = RecordMapper.ToUserDTO(res.Current, "u");
+        var userDTO = RecordMapper.ToUserDTO(res.Current, "u")!;
         return Tuple.Create(!value,userDTO);
 
     }
@@ -122,7 +120,7 @@ public class PostRepo(IDriver driver)
         var parameters = new { comment,userId, postId,commentId = comment.PostId };
         var res=await session.RunAsync(query, parameters);
         await res.FetchAsync();
-        return RecordMapper.ToPost(res.Current, "c");
+        return RecordMapper.ToPost(res.Current, "c")!;
     }
 
     public async Task<List<PostDTO>> GetComments(string postId,string userId)

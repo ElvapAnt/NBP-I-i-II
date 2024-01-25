@@ -91,16 +91,16 @@ public class ChatRepo(IDriver driver)
         return RecordMapper.ToMessageList(list, "msg");
     }
 
-    public async Task<string> DeleteMessage(string messageId)
+    public async Task<Tuple<Message,string>> DeleteMessage(string messageId)
     {
         using var session = _driver.AsyncSession();
 
-        string query = "MATCH (message:Message{MessageId:$messageId})<-[:HAS_MSG]-(c:Chat) with message,c"+
-        " DETACH DELETE message return c.ChatId as ChatId";
+        string query = "MATCH (message:Message{MessageId:$messageId})<-[:HAS_MSG]-(c:Chat) with message,c,"+
+        "properties(message) as msg DETACH DELETE message return msg, c.ChatId as ChatId";
         var parameters = new { messageId };
         var res= await session.RunAsync(query, parameters);
         await res.FetchAsync();
-        return res.Current["ChatId"].As<string>();
+        return Tuple.Create(RecordMapper.ToMessage(res.Current, "msg"),res.Current["ChatId"].As<string>());
     }
 
     public async Task EditMessage(string messageId,string newContent)

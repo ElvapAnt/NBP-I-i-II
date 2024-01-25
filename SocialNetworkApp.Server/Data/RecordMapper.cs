@@ -26,14 +26,18 @@ public static class RecordMapper
     }
 
     
-    public static UserDTO ToUserDTO(IRecord record,string nodeKey="user")
+    public static UserDTO? ToUserDTO(IRecord record,string nodeKey="user")
     {
+        if (record == null)
+            return null;
         var node = record[nodeKey] as IDictionary<string, object>;
         if(node==null)
         {
             var props = record[nodeKey].GetType().GetProperty("Properties");
             node = props!.GetValue(record[nodeKey]) as IDictionary<string, object>;
         }
+        if (node == null)
+            return null;
         return new UserDTO()
         {
             UserId = node["UserId"].As<string>(),
@@ -51,18 +55,22 @@ public static class RecordMapper
     public static List<UserDTO> ToUserList(List<IRecord> records,string nodeKey)
     {
         return records.Select(record=>ToUserDTO(record,nodeKey)
-        ).ToList();
+        !).ToList();
     }
 
-    public static PostDTO ToPost(IRecord record,string nodeKey="post")
+    public static PostDTO? ToPost(IRecord record,string nodeKey="post")
     {
-        var node = record[nodeKey] as IDictionary<string,object>;
+        if (record == null)
+            return null;
+        var node = record[nodeKey] as IReadOnlyDictionary<string,object>;
         if(node==null)
         {
             var objType=record[nodeKey].GetType();
             var prop = objType.GetProperty("Properties");
-            node = prop!.GetValue(record[nodeKey]) as IDictionary<string, object>;
+            node = prop!.GetValue(record[nodeKey]) as IReadOnlyDictionary<string, object>;
         }
+        if (node == null)
+            return null;
         return new PostDTO
         {
             PostId = node["PostId"].As<string>(),
@@ -79,7 +87,7 @@ public static class RecordMapper
 
     public static List<PostDTO> ToPostList(List<IRecord> records,string nodeKey)
     {
-        return records.Select(record => ToPost(record, nodeKey)).ToList();
+        return records.Select(record => ToPost(record, nodeKey)!).ToList();
     }
 
     public static Chat ToChat(IRecord record,string nodeKey)
@@ -115,7 +123,11 @@ public static class RecordMapper
 
     public static Message ToMessage(IRecord record, string nodeKey)
     {
-        var node = record[nodeKey].As<INode>();
+        var node = record[nodeKey] as IReadOnlyDictionary<string, object>;
+        if(node == null)
+        {
+            node = record[nodeKey].As<INode>().Properties;
+        }
         return new Message
         {
             MessageId=node["MessageId"].As<string>(),
@@ -134,7 +146,11 @@ public static class RecordMapper
 
     public static Notification ToNotification(IRecord record,string nodeKey)
     {
-        var node = record[nodeKey].As<INode>();
+        var node = record[nodeKey] as IReadOnlyDictionary<string,object>;
+        if(node==null)
+        {
+            node = record[nodeKey].As<INode>().Properties;
+        }
         return new Notification
         {
             NotificationId=node["NotificationId"].As<string>(),
